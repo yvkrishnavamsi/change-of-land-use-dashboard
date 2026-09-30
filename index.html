@@ -346,10 +346,10 @@ async function fetchData() {
   hideNotice();
   setStatus('Connecting…','#e8a020');
 
-  if (API_URL === 'https://script.google.com/macros/s/AKfycbyu6ecW9iuDVcrZfudzRMeI0_Sn6eXFqm2i9TRMOAskhyUcEXO_P_4mtbSWhC7d4lj0xw/exec') {
+  if (!API_URL || API_URL.includes('PASTE_YOUR')) {
     showLoader(false);
     showNotice('err','⚙️ Setup Required',
-      'Please open <code>index.html</code> and replace <code>https://script.google.com/macros/s/AKfycbyu6ecW9iuDVcrZfudzRMeI0_Sn6eXFqm2i9TRMOAskhyUcEXO_P_4mtbSWhC7d4lj0xw/exec</code> with your Google Apps Script Web App URL. Follow the setup steps in the README.');
+      'Please set <code>API_URL</code> to your Google Apps Script Web App URL.');
     setStatus('⚙️ Not configured','#c0392b');
     return;
   }
