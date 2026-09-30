@@ -5,112 +5,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CLU Pendency Dashboard – DTCP Andhra Pradesh</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
-:root{
-  --ap-blue:#1a3a6b;--ap-gold:#e8a020;--bg:#f0f4f8;--white:#fff;
-  --border:#dde3ed;--text:#1a2540;--muted:#6b7a99;
-  --red:#c0392b;--amber:#d4840a;--green:#1a7a4a;
-  --blue:#1a5abf;--purple:#6c3d9e;--shadow:0 2px 8px rgba(0,0,0,.08);
-}
+:root{--ap-blue:#1a3a6b;--ap-gold:#e8a020;--bg:#f0f4f8;--border:#dde3ed;--text:#1a2540;--muted:#6b7a99;--shadow:0 2px 8px rgba(0,0,0,.08)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-
 .gov-header{background:var(--ap-blue);color:#fff}
 .gov-top{display:flex;align-items:center;gap:16px;padding:12px 28px;border-bottom:3px solid var(--ap-gold)}
 .gov-icon{width:54px;height:54px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
 .gov-title h1{font-size:16px;font-weight:700}
 .gov-title p{font-size:11px;opacity:.8;margin-top:2px}
 .gov-right{margin-left:auto;text-align:right;font-size:11px;opacity:.85}
-.gov-right strong{display:block;font-size:13px;opacity:1}
-
+.gov-right strong{display:block;font-size:13px}
 .stats-bar{background:#162f5a;color:#fff;padding:7px 28px;display:flex;gap:24px;flex-wrap:wrap;font-size:11px}
 .stat-item{display:flex;align-items:center;gap:6px}
 .stat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-
 .app-bar{background:#fff;border-bottom:1px solid var(--border);padding:13px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:var(--shadow)}
 .app-bar-left{display:flex;align-items:center;gap:12px}
-.app-icon{width:42px;height:42px;background:var(--ap-blue);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;flex-shrink:0}
+.app-icon{width:42px;height:42px;background:var(--ap-blue);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff}
 .app-bar-left h2{font-size:15px;font-weight:700;color:var(--ap-blue)}
 .app-bar-left p{font-size:11px;color:var(--muted)}
 .app-bar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.btn{padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;display:inline-flex;align-items:center;gap:5px;transition:opacity .15s,transform .1s}
-.btn:hover{opacity:.85;transform:translateY(-1px)}
+.btn{padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit}
+.btn:hover{opacity:.85}
 .btn-dark{background:#1a2540;color:#fff}
 .btn-gold{background:var(--ap-gold);color:#fff}
-
 .loader-overlay{position:fixed;inset:0;background:rgba(240,244,248,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:14px}
 .spinner{width:52px;height:52px;border:4px solid var(--border);border-top-color:var(--ap-blue);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loader-text{font-size:15px;color:var(--ap-blue);font-weight:700}
-.loader-sub{font-size:12px;color:var(--muted);text-align:center;max-width:380px;line-height:1.7}
+.loader-sub{font-size:12px;color:var(--muted);text-align:center;max-width:380px}
 .loader-overlay.hidden{display:none}
-
 .notice{margin:16px 28px;padding:14px 18px;border-radius:8px;font-size:12px;line-height:1.7;display:none}
 .notice.show{display:block}
 .notice.warn{background:#fffbeb;border:1.5px solid #fcd34d;color:#92400e}
 .notice.err{background:#fff1f1;border:1.5px solid #fca5a5;color:#7f1d1d}
 .notice h4{font-size:13px;margin-bottom:6px}
-.notice code{background:rgba(0,0,0,.07);padding:1px 6px;border-radius:3px;font-family:monospace;font-size:11px}
+.notice code{background:rgba(0,0,0,.07);padding:1px 6px;border-radius:3px;font-size:11px}
 .notice-btns{display:flex;gap:8px;margin-top:10px}
 .n-btn{padding:6px 14px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:inherit}
 .n-btn-p{background:var(--ap-blue);color:#fff}
 .n-btn-s{background:#fff;border:1.5px solid var(--border);color:var(--text)}
-
 .filters-bar{background:#fff;border-bottom:1px solid var(--border);padding:10px 28px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;position:sticky;top:0;z-index:100;box-shadow:0 2px 6px rgba(0,0,0,.06)}
 .fg{display:flex;flex-direction:column;gap:3px}
 .fg label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 select,input[type=text]{background:#f7f9fc;border:1.5px solid var(--border);color:var(--text);padding:7px 10px;border-radius:6px;font-size:12px;font-family:inherit;outline:none;min-width:145px}
 select:focus,input[type=text]:focus{border-color:var(--ap-blue)}
-.btn-sm{padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
+.btn-sm{padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:inherit}
 .btn-reset{background:#f7f9fc;border:1.5px solid var(--border);color:var(--muted)}
 .btn-reset:hover{border-color:var(--ap-blue);color:var(--ap-blue)}
-
 main{padding:20px 28px;max-width:1500px}
-
 .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:20px}
-.kpi{background:#fff;border-radius:10px;padding:16px 18px;border:1px solid var(--border);box-shadow:var(--shadow);cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden;border-top:4px solid var(--cc)}
-.kpi:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.12)}
+.kpi{background:#fff;border-radius:10px;padding:16px 18px;border:1px solid var(--border);box-shadow:var(--shadow);cursor:pointer;position:relative;border-top:4px solid var(--cc)}
+.kpi:hover{box-shadow:0 6px 18px rgba(0,0,0,.12)}
 .kpi.active{box-shadow:0 0 0 2.5px var(--cc),0 4px 12px rgba(0,0,0,.1)}
-.kpi-label{font-size:11px;font-weight:600;color:var(--cc);margin-bottom:8px;line-height:1.3}
+.kpi-label{font-size:11px;font-weight:600;color:var(--cc);margin-bottom:8px}
 .kpi-val{font-size:34px;font-weight:800;color:var(--cc);line-height:1}
 .kpi-sub{font-size:10px;color:var(--muted);margin-top:4px}
-.kpi-icon{position:absolute;right:12px;top:12px;width:34px;height:34px;border-radius:50%;border:2.5px solid var(--cc);display:flex;align-items:center;justify-content:center;font-size:15px;opacity:.35}
-
+.kpi-icon{position:absolute;right:12px;top:12px;font-size:18px;opacity:.35}
 .dl-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:20px}
-.dl-row span{font-size:12px;font-weight:700;color:var(--muted)}
-.dl-btn{padding:7px 14px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:inherit;display:inline-flex;align-items:center;gap:5px;color:#fff;transition:opacity .15s,transform .1s}
-.dl-btn:hover{opacity:.85;transform:translateY(-1px)}
-
+.dl-row>span{font-size:12px;font-weight:700;color:var(--muted)}
+.dl-row select{min-width:0;font-weight:700}
+.dl-btn{padding:7px 14px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:inherit;color:#fff}
+.dl-btn:hover{opacity:.85}
+.dl-hint{font-size:11px;color:var(--muted);width:100%}
 .charts-row{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:16px;margin-bottom:20px}
 .cc{background:#fff;border-radius:10px;padding:18px 20px;border:1px solid var(--border);box-shadow:var(--shadow)}
 .cc h3{font-size:11px;font-weight:700;color:var(--ap-blue);margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em}
-
 .tbl-outer{background:#fff;border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden}
 .tbl-top{padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);background:#f7f9fc;flex-wrap:wrap;gap:8px}
 .tbl-top h3{font-size:13px;font-weight:700;color:var(--ap-blue)}
 #result-count{font-size:11px;color:var(--muted)}
 .tbl-scroll{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:12px;min-width:1000px}
-thead th{background:var(--ap-blue);color:#fff;padding:10px 13px;text-align:left;font-size:11px;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none;border-right:1px solid rgba(255,255,255,.1)}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:1150px}
+thead th{background:var(--ap-blue);color:#fff;padding:10px 13px;text-align:left;font-size:11px;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none}
 thead th:hover{background:#1a5abf}
-tbody tr{border-bottom:1px solid #eef0f5;transition:background .1s}
-tbody tr:hover{background:#f0f4ff}
+tbody tr{border-bottom:1px solid #eef0f5}
+tbody tr:hover,tbody tr:nth-child(even):hover{background:#f0f4ff}
 tbody tr:nth-child(even){background:#fafbfd}
-tbody tr:nth-child(even):hover{background:#f0f4ff}
 td{padding:8px 13px;vertical-align:middle}
 td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
 .cb{display:inline-block;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700}
-.cb-ULB{background:#dbeafe;color:#1a5abf}
-.cb-UDA{background:#ede9fe;color:#6c3d9e}
-.cb-DTCP{background:#fef3c7;color:#d4840a}
-.cb-GOVT{background:#d1fae5;color:#1a7a4a}
-.cb-LTP{background:#fee2e2;color:#c0392b}
-.d0{color:#1a7a4a;font-weight:700}
-.d1{color:#d4840a;font-weight:700}
-.d2{color:#c45c0a;font-weight:700}
-.d3{color:#c0392b;font-weight:700}
+.cb-ULB{background:#dbeafe;color:#1a5abf}.cb-UDA{background:#ede9fe;color:#6c3d9e}.cb-DTCP{background:#fef3c7;color:#d4840a}.cb-GOVT{background:#d1fae5;color:#1a7a4a}.cb-LTP{background:#fee2e2;color:#c0392b}
+.d0{color:#1a7a4a;font-weight:700}.d1{color:#d4840a;font-weight:700}.d2{color:#c45c0a;font-weight:700}.d3{color:#c0392b;font-weight:700}
 .d4{color:#7c0a0a;font-weight:700;background:#fff0f0;border-radius:4px;padding:2px 6px}
-
 .pagination{display:flex;justify-content:space-between;align-items:center;padding:11px 20px;border-top:1px solid var(--border);background:#f7f9fc;flex-wrap:wrap;gap:8px}
 .pagination span{font-size:12px;color:var(--muted)}
 .pbtns{display:flex;gap:5px;flex-wrap:wrap}
@@ -118,11 +98,9 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
 .pb:hover{border-color:var(--ap-blue);color:var(--ap-blue)}
 .pb:disabled{opacity:.3;cursor:not-allowed}
 .pb.active{background:var(--ap-blue);border-color:var(--ap-blue);color:#fff}
-
 .pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;min-height:4px}
 .pill{background:#dbeafe;color:#1a3a6b;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:5px}
-.pill button{background:none;border:none;cursor:pointer;font-size:13px;color:#1a3a6b;line-height:1;padding:0}
-
+.pill button{background:none;border:none;cursor:pointer;font-size:13px;color:#1a3a6b;padding:0}
 @media(max-width:900px){
   .gov-top,.app-bar,.filters-bar,main,.stats-bar,.notice{padding-left:14px;padding-right:14px}
   .charts-row{grid-template-columns:1fr}
@@ -138,153 +116,85 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
   <div class="loader-sub" id="loader-sub">Fetching live data from Google Sheets…</div>
 </div>
 
-<div class="gov-header">
-  <div class="gov-top">
-    <div class="gov-icon">🏛️</div>
-    <div class="gov-title">
-      <h1>Government of Andhra Pradesh – Directorate of Town &amp; Country Planning</h1>
-      <p>Change of Land Use (CLU) – Live Pendency Monitoring Dashboard</p>
-    </div>
-    <div class="gov-right">
-      <strong id="today-date">—</strong>
-      <span>Public Dashboard · Auto-updated</span>
-    </div>
+<div class="gov-header"><div class="gov-top">
+  <div class="gov-icon">🏛️</div>
+  <div class="gov-title">
+    <h1>Government of Andhra Pradesh – Directorate of Town &amp; Country Planning</h1>
+    <p>Change of Land Use (CLU) – Live Pendency Monitoring Dashboard</p>
   </div>
-</div>
+  <div class="gov-right"><strong id="today-date">—</strong><span>Public Dashboard · Auto-updated</span></div>
+</div></div>
 
 <div class="stats-bar">
   <div class="stat-item"><div class="stat-dot" style="background:var(--ap-gold)"></div><span>Live from Google Sheets</span></div>
   <div class="stat-item"><div class="stat-dot" style="background:#3ec98e"></div><span>Refreshed: <strong id="refresh-time">—</strong></span></div>
   <div class="stat-item"><div class="stat-dot" style="background:#e05252"></div><span>Critical (&gt;180 days): <strong id="stat-crit">—</strong></span></div>
   <div class="stat-item"><div class="stat-dot" style="background:#e8943a"></div><span>Avg Pendency: <strong id="stat-avg">—</strong> days</span></div>
-  <div class="stat-item" style="margin-left:auto">
-    <div class="stat-dot" id="status-dot" style="background:#e8a020"></div>
-    <span id="status-text">Connecting…</span>
-  </div>
+  <div class="stat-item" style="margin-left:auto"><div class="stat-dot" id="status-dot" style="background:#e8a020"></div><span id="status-text">Connecting…</span></div>
 </div>
 
 <div class="app-bar">
   <div class="app-bar-left">
     <div class="app-icon">🏗️</div>
-    <div>
-      <h2>Change of Land Use – Pendency Report</h2>
-      <p>Real-time tracking across ULB · UDA · DTCP · GOVT · LTP stages</p>
-    </div>
+    <div><h2>Change of Land Use – Pendency Report</h2><p>Days pending are counted from the date the file was assigned to the officer</p></div>
   </div>
   <div class="app-bar-right">
-    <button class="btn btn-dark" onclick="downloadCSV('ALL')">⬇ Download All Data</button>
+    <button class="btn btn-dark" onclick="download('ALL')">⬇ Download Current View</button>
     <button class="btn btn-gold" onclick="fetchData()">🔄 Refresh Now</button>
   </div>
 </div>
 
 <div class="notice err" id="notice-box">
-  <h4 id="notice-title">⚠️ Could not load live data</h4>
-  <p id="notice-body"></p>
+  <h4 id="notice-title"></h4><p id="notice-body"></p>
   <div class="notice-btns">
     <button class="n-btn n-btn-p" onclick="fetchData()">🔄 Retry</button>
-    <button class="n-btn n-btn-s" onclick="document.getElementById('notice-box').classList.remove('show')">Dismiss</button>
+    <button class="n-btn n-btn-s" onclick="hideNotice()">Dismiss</button>
   </div>
 </div>
 
 <div class="filters-bar">
-  <div class="fg">
-    <label>🔍 Search</label>
-    <input type="text" id="search-input" placeholder="App no / owner / ULB / LTP…" style="min-width:210px">
-  </div>
-  <div class="fg">
-    <label>Pending Stage</label>
+  <div class="fg"><label>🔍 Search</label><input type="text" id="search-input" placeholder="App no / owner / ULB / LTP…" style="min-width:210px"></div>
+  <div class="fg"><label>Pending Stage</label>
     <select id="stage-filter">
-      <option value="">All Stages</option>
-      <option value="ULB">Pending with ULB</option>
-      <option value="UDA">Pending with UDA</option>
-      <option value="DTCP">Pending with DTCP</option>
-      <option value="GOVT">Pending with GOVT</option>
-      <option value="LTP">Pending with LTP</option>
-    </select>
-  </div>
-  <div class="fg">
-    <label>UDA Authority</label>
-    <select id="uda-filter"><option value="">All UDAs</option></select>
-  </div>
-  <div class="fg">
-    <label>ULB</label>
-    <select id="ulb-filter"><option value="">All ULBs</option></select>
-  </div>
-  <div class="fg">
-    <label>Pendency Range</label>
+      <option value="">All Stages</option><option value="ULB">Pending with ULB</option><option value="UDA">Pending with UDA</option>
+      <option value="DTCP">Pending with DTCP</option><option value="GOVT">Pending with GOVT</option><option value="LTP">Pending with LTP</option>
+    </select></div>
+  <div class="fg"><label>UDA Authority</label><select id="uda-filter"><option value="">All UDAs</option></select></div>
+  <div class="fg"><label>ULB</label><select id="ulb-filter"><option value="">All ULBs</option></select></div>
+  <div class="fg"><label>Pendency Range</label>
     <select id="days-filter">
-      <option value="">All</option>
-      <option value="0-30">0–30 days</option>
-      <option value="31-60">31–60 days</option>
-      <option value="61-90">61–90 days</option>
-      <option value="91-180">91–180 days</option>
-      <option value="181-9999">&gt;180 days (Critical)</option>
-    </select>
-  </div>
-  <div class="fg">
-    <label>Sort By</label>
+      <option value="">All</option><option value="0-30">0–30 days</option><option value="31-60">31–60 days</option>
+      <option value="61-90">61–90 days</option><option value="91-180">91–180 days</option><option value="181-99999">&gt;180 days (Critical)</option>
+    </select></div>
+  <div class="fg"><label>Sort By</label>
     <select id="sort-select">
-      <option value="days-desc">Most Days Pending</option>
-      <option value="days-asc">Fewest Days Pending</option>
-      <option value="sno-asc">S.No Ascending</option>
-      <option value="date-asc">Submitted (Oldest)</option>
-      <option value="date-desc">Submitted (Newest)</option>
-    </select>
-  </div>
-  <div class="fg" style="align-self:flex-end">
-    <button class="btn-sm btn-reset" onclick="resetFilters()">✕ Reset</button>
-  </div>
+      <option value="days-desc">Most Days Pending</option><option value="days-asc">Fewest Days Pending</option>
+      <option value="sno-asc">S.No Ascending</option><option value="date-asc">Assigned (Oldest)</option><option value="date-desc">Assigned (Newest)</option>
+    </select></div>
+  <div class="fg" style="align-self:flex-end"><button class="btn-sm btn-reset" onclick="resetFilters()">✕ Reset</button></div>
 </div>
 
 <main>
   <div class="pills" id="pills"></div>
   <div class="kpi-row">
-    <div class="kpi" style="--cc:#1a3a6b" onclick="setStage('')">
-      <div class="kpi-label">Total Received / Pending</div>
-      <div class="kpi-val" id="k-total">—</div>
-      <div class="kpi-sub">All stages combined</div>
-      <div class="kpi-icon">📋</div>
-    </div>
-    <div class="kpi" style="--cc:#1a5abf" onclick="setStage('ULB')">
-      <div class="kpi-label">Pending with ULB</div>
-      <div class="kpi-val" id="k-ulb">—</div>
-      <div class="kpi-sub">Urban Local Body</div>
-      <div class="kpi-icon">🏙️</div>
-    </div>
-    <div class="kpi" style="--cc:#6c3d9e" onclick="setStage('UDA')">
-      <div class="kpi-label">Pending with UDA</div>
-      <div class="kpi-val" id="k-uda">—</div>
-      <div class="kpi-sub">Urban Dev. Authority</div>
-      <div class="kpi-icon">🏢</div>
-    </div>
-    <div class="kpi" style="--cc:#d4840a" onclick="setStage('DTCP')">
-      <div class="kpi-label">Pending with DTCP</div>
-      <div class="kpi-val" id="k-dtcp">—</div>
-      <div class="kpi-sub">Town &amp; Country Planning</div>
-      <div class="kpi-icon">📐</div>
-    </div>
-    <div class="kpi" style="--cc:#1a7a4a" onclick="setStage('GOVT')">
-      <div class="kpi-label">Pending with GOVT</div>
-      <div class="kpi-val" id="k-govt">—</div>
-      <div class="kpi-sub">Government / APCRDA</div>
-      <div class="kpi-icon">🏛️</div>
-    </div>
-    <div class="kpi" style="--cc:#c0392b" onclick="setStage('LTP')">
-      <div class="kpi-label">Pending with LTP</div>
-      <div class="kpi-val" id="k-ltp">—</div>
-      <div class="kpi-sub">Shortfall / Payment</div>
-      <div class="kpi-icon">📄</div>
-    </div>
+    <div class="kpi" style="--cc:#1a3a6b" onclick="setStage('')"><div class="kpi-label">Total Received / Pending</div><div class="kpi-val" id="k-total">—</div><div class="kpi-sub">All stages combined</div><div class="kpi-icon">📋</div></div>
+    <div class="kpi" style="--cc:#1a5abf" onclick="setStage('ULB')"><div class="kpi-label">Pending with ULB</div><div class="kpi-val" id="k-ulb">—</div><div class="kpi-sub">Urban Local Body</div><div class="kpi-icon">🏙️</div></div>
+    <div class="kpi" style="--cc:#6c3d9e" onclick="setStage('UDA')"><div class="kpi-label">Pending with UDA</div><div class="kpi-val" id="k-uda">—</div><div class="kpi-sub">UDAs incl. APCRDA</div><div class="kpi-icon">🏢</div></div>
+    <div class="kpi" style="--cc:#d4840a" onclick="setStage('DTCP')"><div class="kpi-label">Pending with DTCP</div><div class="kpi-val" id="k-dtcp">—</div><div class="kpi-sub">Town &amp; Country Planning</div><div class="kpi-icon">📐</div></div>
+    <div class="kpi" style="--cc:#1a7a4a" onclick="setStage('GOVT')"><div class="kpi-label">Pending with GOVT</div><div class="kpi-val" id="k-govt">—</div><div class="kpi-sub">Government</div><div class="kpi-icon">🏛️</div></div>
+    <div class="kpi" style="--cc:#c0392b" onclick="setStage('LTP')"><div class="kpi-label">Pending with LTP</div><div class="kpi-val" id="k-ltp">—</div><div class="kpi-sub">Shortfall / Payment</div><div class="kpi-icon">📄</div></div>
   </div>
 
   <div class="dl-row">
     <span>⬇ Download Report:</span>
-    <button class="dl-btn" style="background:#1a3a6b" onclick="downloadCSV('ALL')">📋 All Pending</button>
-    <button class="dl-btn" style="background:#1a5abf" onclick="downloadCSV('ULB')">🏙️ ULB</button>
-    <button class="dl-btn" style="background:#6c3d9e" onclick="downloadCSV('UDA')">🏢 UDA</button>
-    <button class="dl-btn" style="background:#d4840a" onclick="downloadCSV('DTCP')">📐 DTCP</button>
-    <button class="dl-btn" style="background:#1a7a4a" onclick="downloadCSV('GOVT')">🏛️ GOVT</button>
-    <button class="dl-btn" style="background:#c0392b" onclick="downloadCSV('LTP')">📄 LTP</button>
+    <select id="fmt"><option value="xlsx">Excel (.xlsx)</option><option value="pdf">PDF</option><option value="csv">CSV</option></select>
+    <button class="dl-btn" style="background:#1a3a6b" onclick="download('ALL')">📋 All Pending</button>
+    <button class="dl-btn" style="background:#1a5abf" onclick="download('ULB')">🏙️ ULB</button>
+    <button class="dl-btn" style="background:#6c3d9e" onclick="download('UDA')">🏢 UDA</button>
+    <button class="dl-btn" style="background:#d4840a" onclick="download('DTCP')">📐 DTCP</button>
+    <button class="dl-btn" style="background:#1a7a4a" onclick="download('GOVT')">🏛️ GOVT</button>
+    <button class="dl-btn" style="background:#c0392b" onclick="download('LTP')">📄 LTP</button>
+    <div class="dl-hint">Downloads follow the selected UDA, ULB, range and search filters. “All Pending” follows the current stage tab too.</div>
   </div>
 
   <div class="charts-row">
@@ -294,24 +204,15 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
   </div>
 
   <div class="tbl-outer">
-    <div class="tbl-top">
-      <h3 id="tbl-title">All Pending Applications</h3>
-      <span id="result-count">—</span>
-    </div>
+    <div class="tbl-top"><h3 id="tbl-title">All Pending Applications</h3><span id="result-count">—</span></div>
     <div class="tbl-scroll">
       <table>
         <thead><tr>
-          <th onclick="tblSort('sno')">S.No</th>
-          <th>Application Number</th>
+          <th onclick="tblSort('sno')">S.No</th><th>Application Number</th><th>Submitted Date</th><th>Owner Name</th>
+          <th>ULB</th><th>UDA Authority</th><th>LTP Name</th><th>Assigned To</th>
+          <th onclick="tblSort('date')">Assigned Date</th>
           <th onclick="tblSort('days')">Days Pending ↓</th>
-          <th>Submitted Date</th>
-          <th>Owner Name</th>
-          <th>ULB</th>
-          <th>UDA Authority</th>
-          <th>LTP Name</th>
-          <th>Assigned To</th>
-          <th>Stage</th>
-          <th>Task / Designation</th>
+          <th>Stage</th><th>Task / Designation</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -328,273 +229,274 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
 </main>
 
 <script>
-// ══════════════════════════════════════════════════════════
-//  ▶▶ STEP 1: Paste your Google Apps Script Web App URL here
-// ══════════════════════════════════════════════════════════
 const API_URL = 'https://script.google.com/macros/s/AKfycbyu6ecW9iuDVcrZfudzRMeI0_Sn6eXFqm2i9TRMOAskhyUcEXO_P_4mtbSWhC7d4lj0xw/exec';
-// Example:
-// const API_URL = 'https://script.google.com/macros/s/AKfycb.../exec';
 
-// ══════════════════════════════════════════════════════════
 const CAT_LABELS = {ULB:'Pending with ULB',UDA:'Pending with UDA',DTCP:'Pending with DTCP',GOVT:'Pending with GOVT',LTP:'Pending with LTP'};
 let ALL_DATA=[], filtered=[], currentPage=1, charts={};
 const PAGE_SIZE=20;
+const $=id=>document.getElementById(id);
 
-// ── FETCH ──────────────────────────────────────────────
-async function fetchData() {
-  showLoader(true, 'Fetching live data from Google Sheets…');
-  hideNotice();
-  setStatus('Connecting…','#e8a020');
-
-  if (!API_URL || API_URL.includes('PASTE_YOUR')) {
-    showLoader(false);
-    showNotice('err','⚙️ Setup Required',
-      'Please set <code>API_URL</code> to your Google Apps Script Web App URL.');
-    setStatus('⚙️ Not configured','#c0392b');
-    return;
-  }
-
-  try {
-    const res = await fetch(API_URL, { cache: 'no-cache' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const json = await res.json();
-    if (json.error) throw new Error(json.error);
-    if (!json.rows || json.rows.length === 0) throw new Error('No data rows returned');
-
-    ALL_DATA = processRows(json.rows);
-    try { localStorage.setItem('clu_cache', JSON.stringify({ts:Date.now(), data:ALL_DATA})); } catch(e){}
-    document.getElementById('refresh-time').textContent = new Date().toLocaleTimeString('en-IN');
-    setStatus('✓ Live · ' + ALL_DATA.length + ' records','#3ec98e');
-    initDropdowns(); applyFilters();
-    if (!Object.keys(charts).length) buildCharts(); else updateCharts();
-  } catch(e) {
-    console.error('Fetch error:', e);
-    tryCache(e.message);
-  } finally {
-    showLoader(false);
-  }
+// ── FETCH ──
+async function fetchData(){
+  showLoader(true,'Fetching live data from Google Sheets…'); hideNotice(); setStatus('Connecting…','#e8a020');
+  try{
+    const res=await fetch(API_URL,{cache:'no-cache'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const json=await res.json();
+    if(json.error) throw new Error(json.error);
+    if(!json.rows||!json.rows.length) throw new Error('No data rows returned');
+    try{localStorage.setItem('clu_cache_v2',JSON.stringify({ts:Date.now(),rows:json.rows}));}catch(e){}
+    loadRows(json.rows);
+    $('refresh-time').textContent=new Date().toLocaleTimeString('en-IN');
+    setStatus('✓ Live · '+ALL_DATA.length+' records','#3ec98e');
+  }catch(e){ console.error(e); tryCache(e.message); }
+  finally{ showLoader(false); }
+}
+function loadRows(rows){
+  ALL_DATA=processRows(rows); applyFilters();
+  if(!Object.keys(charts).length) buildCharts(); else updateCharts();
 }
 
-function processRows(rows) {
-  const today = new Date();
-  return rows.filter(r => r['Application Number'] || r['S.no']).map(r => {
-    const task = (r['Designation & Task Name']||'').trim();
-    r._cat = task.startsWith('ULB_') ? 'ULB'
-           : (task.startsWith('UDA_')||task.startsWith('Metro')) ? 'UDA'
-           : task.startsWith('DTCP_') ? 'DTCP'
-           : (task.startsWith('GOVT_')||task.startsWith('APCRDA_')) ? 'GOVT'
-           : (task.includes('Shortfall')||task.includes('Payment Process')) ? 'LTP'
-           : 'OTHER';
-    const rawDays = parseInt((r['No. of days pending']||'').toString().replace(/[^\d]/g,''));
-    if (!isNaN(rawDays) && rawDays > 0) {
-      r._days = rawDays;
-    } else {
-      const sd = parseAnyDate(r['Submitted Date & Time']||'');
-      r._days = sd ? Math.max(0, Math.floor((today-sd)/86400000)) : 0;
-    }
-    const sd = parseAnyDate(r['Submitted Date & Time']||'');
-    r._submit = sd ? sd.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '';
+// APCRDA now counts as UDA
+function stageOf(task){
+  if(task.startsWith('ULB_')) return 'ULB';
+  if(task.startsWith('UDA_')||task.startsWith('Metro')||task.startsWith('APCRDA_')||task.startsWith('CRDA_')) return 'UDA';
+  if(task.startsWith('DTCP_')) return 'DTCP';
+  if(task.startsWith('GOVT_')) return 'GOVT';
+  if(task.includes('Shortfall')||task.includes('Payment Process')) return 'LTP';
+  return 'OTHER';
+}
+function processRows(rows){
+  const now=dateOnly(new Date());
+  return rows.filter(r=>r['Application Number']||r['S.no']).map(r=>{
+    r._cat=stageOf((r['Designation & Task Name']||'').trim());
+    const sub=dateOnly(parseAnyDate(r['Submitted Date & Time']));
+    const asg=dateOnly(parseAnyDate(r['Assigned Date & Time']));
+    r._submit=sub?sub.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
+    r._assigned=asg?fmtD(asg):'';
+    r._aTs=asg?asg.getTime():0;
+    // days pending = days since assigned to the officer (falls back to submitted date if assigned date is missing)
+    const from=asg||sub;
+    r._days=from?Math.max(0,Math.round((now-from)/86400000)):0;
     return r;
   });
 }
-
-function parseAnyDate(s) {
-  if (!s) return null;
-  s = String(s).replace(/\n.*/,'').trim();
-  const m = s.match(/(\d{2})-(\d{2})-(\d{4})/);
-  if (m) return new Date(+m[3],+m[2]-1,+m[1]);
-  const d = new Date(s); return isNaN(d)?null:d;
+function fmtD(d){return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+function dateOnly(d){return d?new Date(d.getFullYear(),d.getMonth(),d.getDate()):null;}
+function parseAnyDate(s){
+  if(!s) return null;
+  s=String(s).replace(/\s+/g,' ').trim();
+  const m=s.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})(?:\D+(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?)?/i);
+  if(m){
+    let h=+(m[4]||0); const ap=(m[6]||'').toUpperCase();
+    if(ap==='PM'&&h<12)h+=12; if(ap==='AM'&&h===12)h=0;
+    return new Date(+m[3],+m[2]-1,+m[1],h,+(m[5]||0));
+  }
+  const d=new Date(s); return isNaN(d)?null:d;
 }
-
-function tryCache(reason) {
-  try {
-    const c = JSON.parse(localStorage.getItem('clu_cache')||'null');
-    if (c && c.data && c.data.length > 0) {
-      ALL_DATA = c.data;
-      const age = Math.round((Date.now()-c.ts)/60000);
-      setStatus('⚠ Cached · '+age+'m ago','#e8a020');
-      document.getElementById('refresh-time').textContent = 'Cached '+age+'m ago';
-      initDropdowns(); applyFilters();
-      if (!Object.keys(charts).length) buildCharts(); else updateCharts();
-      showNotice('warn','⚠️ Showing cached data ('+age+' min old)',
-        'Live fetch failed: <code>'+reason+'</code><br>Displaying last successfully loaded data. Click Refresh to retry.');
+function tryCache(reason){
+  try{
+    const c=JSON.parse(localStorage.getItem('clu_cache_v2')||'null');
+    if(c&&c.rows&&c.rows.length){
+      loadRows(c.rows);
+      const age=Math.round((Date.now()-c.ts)/60000);
+      setStatus('⚠ Cached · '+age+'m ago','#e8a020'); $('refresh-time').textContent='Cached '+age+'m ago';
+      showNotice('warn','⚠️ Showing cached data ('+age+' min old)','Live fetch failed: <code>'+reason+'</code><br>Click Refresh to retry.');
       return;
     }
-  } catch(e){}
+  }catch(e){}
   setStatus('✗ No data','#c0392b');
-  showNotice('err','⚠️ Could not load data',
-    'Error: <code>'+reason+'</code><br>Please check your Apps Script Web App URL is correct and deployed with "Anyone" access.');
+  showNotice('err','⚠️ Could not load data','Error: <code>'+reason+'</code><br>Check that the Apps Script Web App URL is correct and deployed with “Anyone” access.');
 }
 
-// ── DROPDOWNS ──────────────────────────────────────────
-function initDropdowns(){
-  const udas=[...new Set(ALL_DATA.map(r=>r['UDA Name']).filter(Boolean))].sort();
-  const ulbs=[...new Set(ALL_DATA.map(r=>r['ULB Name']).filter(Boolean))].sort();
-  fillSel('uda-filter',udas,abbrevUDA); fillSel('ulb-filter',ulbs,x=>x);
+// ── FILTERING ──
+const val=id=>$(id).value;
+function matchRow(r,stage){
+  const q=val('search-input').toLowerCase(), uda=val('uda-filter'), ulb=val('ulb-filter'), days=val('days-filter');
+  if(q&&![r['Application Number'],r['Owner Name'],r['UDA Name'],r['ULB Name'],r['LTP Name'],r['Assigned To'],r['Designation & Task Name']].some(v=>v&&String(v).toLowerCase().includes(q))) return false;
+  if(stage&&r._cat!==stage) return false;
+  if(uda&&r['UDA Name']!==uda) return false;
+  if(ulb&&r['ULB Name']!==ulb) return false;
+  if(days){const[lo,hi]=days.split('-').map(Number); if(r._days<lo||r._days>hi) return false;}
+  return true;
 }
-function fillSel(id,vals,fn){
-  const sel=document.getElementById(id),cur=sel.value;
-  while(sel.options.length>1)sel.remove(1);
-  vals.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=fn(v);sel.appendChild(o);});
-  if([...sel.options].some(o=>o.value===cur))sel.value=cur;
-}
-
-// ── FILTERS ────────────────────────────────────────────
-function applyFilters(){
-  const q=document.getElementById('search-input').value.toLowerCase();
-  const stage=document.getElementById('stage-filter').value;
-  const uda=document.getElementById('uda-filter').value;
-  const ulb=document.getElementById('ulb-filter').value;
-  const days=document.getElementById('days-filter').value;
-  const sort=document.getElementById('sort-select').value;
-  filtered=ALL_DATA.filter(r=>{
-    const ms=!q||[r['Application Number'],r['Owner Name'],r['UDA Name'],r['ULB Name'],r['LTP Name'],r['Assigned To'],r['Designation & Task Name']].some(v=>v&&String(v).toLowerCase().includes(q));
-    const mc=!stage||r._cat===stage;
-    const mu=!uda||r['UDA Name']===uda;
-    const ml=!ulb||r['ULB Name']===ulb;
-    let md=true;
-    if(days){const[lo,hi]=days.split('-').map(Number);md=r._days>=lo&&r._days<=hi;}
-    return ms&&mc&&mu&&ml&&md;
-  });
-  filtered.sort((a,b)=>{
-    if(sort==='days-desc')return b._days-a._days;
-    if(sort==='days-asc') return a._days-b._days;
-    if(sort==='sno-asc')  return parseInt(a['S.no']||0)-parseInt(b['S.no']||0);
-    if(sort==='date-asc') return (a._submit||'').localeCompare(b._submit||'');
-    if(sort==='date-desc')return (b._submit||'').localeCompare(a._submit||'');
+function sortRows(list){
+  const s=val('sort-select');
+  return list.sort((a,b)=>{
+    if(s==='days-desc')return b._days-a._days;
+    if(s==='days-asc') return a._days-b._days;
+    if(s==='sno-asc')  return parseInt(a['S.no']||0)-parseInt(b['S.no']||0);
+    if(s==='date-asc') return a._aTs-b._aTs;
+    if(s==='date-desc')return b._aTs-a._aTs;
     return 0;
   });
-  currentPage=1;
-  renderKPIs();renderPills();renderTable();updateCharts();
 }
-function setStage(v){document.getElementById('stage-filter').value=v;applyFilters();}
+// UDA and ULB lists narrow down based on the chosen stage (and UDA for ULB)
+function initDropdowns(){
+  const stage=val('stage-filter');
+  const base=ALL_DATA.filter(r=>!stage||r._cat===stage);
+  const uniq=(l,k)=>[...new Set(l.map(r=>r[k]).filter(Boolean))].sort();
+  fillSel('uda-filter',uniq(base,'UDA Name'),abbrevUDA);
+  const uda=val('uda-filter');
+  fillSel('ulb-filter',uniq(base.filter(r=>!uda||r['UDA Name']===uda),'ULB Name'),x=>x);
+}
+function fillSel(id,vals,fn){
+  const sel=$(id),cur=sel.value;
+  while(sel.options.length>1)sel.remove(1);
+  vals.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=fn(v);sel.appendChild(o);});
+  sel.value=vals.includes(cur)?cur:'';
+}
+function applyFilters(){
+  initDropdowns();
+  filtered=sortRows(ALL_DATA.filter(r=>matchRow(r,val('stage-filter'))));
+  currentPage=1; renderKPIs(); renderPills(); renderTable(); updateCharts();
+}
+function setStage(v){$('stage-filter').value=v;applyFilters();}
 function resetFilters(){
-  ['stage-filter','uda-filter','ulb-filter','days-filter'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('search-input').value='';
-  document.getElementById('sort-select').value='days-desc';
-  applyFilters();
+  ['stage-filter','uda-filter','ulb-filter','days-filter'].forEach(id=>$(id).value='');
+  $('search-input').value=''; $('sort-select').value='days-desc'; applyFilters();
 }
 function tblSort(f){
-  const s=document.getElementById('sort-select');
-  s.value=f==='days'?(s.value==='days-desc'?'days-asc':'days-desc'):'sno-asc';
+  const s=$('sort-select');
+  s.value=f==='days'?(s.value==='days-desc'?'days-asc':'days-desc'):f==='date'?(s.value==='date-asc'?'date-desc':'date-asc'):'sno-asc';
   applyFilters();
 }
-['stage-filter','uda-filter','ulb-filter','days-filter','sort-select'].forEach(id=>
-  document.getElementById(id).addEventListener('change',applyFilters));
-document.getElementById('search-input').addEventListener('input',debounce(applyFilters,220));
-function debounce(fn,ms){let t;return function(...a){clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
+['stage-filter','uda-filter','ulb-filter','days-filter','sort-select'].forEach(id=>$(id).addEventListener('change',applyFilters));
+$('search-input').addEventListener('input',debounce(applyFilters,220));
+function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 
-// ── KPIs ───────────────────────────────────────────────
+// ── KPIs / PILLS ──
 function renderKPIs(){
-  document.getElementById('k-total').textContent=filtered.length;
-  ['ULB','UDA','DTCP','GOVT','LTP'].forEach(c=>
-    document.getElementById('k-'+c.toLowerCase()).textContent=filtered.filter(r=>r._cat===c).length);
-  document.getElementById('stat-crit').textContent=ALL_DATA.filter(r=>r._days>180).length;
-  document.getElementById('stat-avg').textContent=ALL_DATA.length?Math.round(ALL_DATA.reduce((s,r)=>s+r._days,0)/ALL_DATA.length):0;
-  const sv=document.getElementById('stage-filter').value;
-  document.querySelectorAll('.kpi').forEach(el=>{
-    el.classList.toggle('active',sv?el.getAttribute('onclick').includes(`'${sv}'`):el.getAttribute('onclick').includes("''"));
-  });
+  $('k-total').textContent=filtered.length;
+  // stage cards respect the other filters, so they always add up
+  ['ULB','UDA','DTCP','GOVT','LTP'].forEach(c=>$('k-'+c.toLowerCase()).textContent=ALL_DATA.filter(r=>matchRow(r,c)).length);
+  $('stat-crit').textContent=ALL_DATA.filter(r=>r._days>180).length;
+  $('stat-avg').textContent=ALL_DATA.length?Math.round(ALL_DATA.reduce((s,r)=>s+r._days,0)/ALL_DATA.length):0;
+  const sv=val('stage-filter');
+  document.querySelectorAll('.kpi').forEach(el=>el.classList.toggle('active',el.getAttribute('onclick')===`setStage('${sv}')`));
 }
-
-// ── PILLS ──────────────────────────────────────────────
 function renderPills(){
-  const q=document.getElementById('search-input').value;
-  const stage=document.getElementById('stage-filter').value;
-  const uda=document.getElementById('uda-filter').value;
-  const ulb=document.getElementById('ulb-filter').value;
-  const days=document.getElementById('days-filter').value;
+  const q=val('search-input'),stage=val('stage-filter'),uda=val('uda-filter'),ulb=val('ulb-filter'),days=val('days-filter');
   const pills=[];
-  if(q)    pills.push({l:'🔍 '+q,c:()=>{document.getElementById('search-input').value='';applyFilters();}});
-  if(stage)pills.push({l:CAT_LABELS[stage]||stage,c:()=>{document.getElementById('stage-filter').value='';applyFilters();}});
-  if(uda)  pills.push({l:'🏢 '+abbrevUDA(uda),c:()=>{document.getElementById('uda-filter').value='';applyFilters();}});
-  if(ulb)  pills.push({l:'🏙️ '+ulb,c:()=>{document.getElementById('ulb-filter').value='';applyFilters();}});
-  if(days) pills.push({l:'📅 '+days.replace('-9999','+').replace('-',' – ')+' days',c:()=>{document.getElementById('days-filter').value='';applyFilters();}});
-  document.getElementById('pills').innerHTML=pills.map((p,i)=>`<div class="pill">${p.l}<button onclick="_pc(${i})">✕</button></div>`).join('');
+  if(q)pills.push({l:'🔍 '+q,c:()=>{$('search-input').value='';applyFilters();}});
+  if(stage)pills.push({l:CAT_LABELS[stage],c:()=>setStage('')});
+  if(uda)pills.push({l:'🏢 '+abbrevUDA(uda),c:()=>{$('uda-filter').value='';applyFilters();}});
+  if(ulb)pills.push({l:'🏙️ '+ulb,c:()=>{$('ulb-filter').value='';applyFilters();}});
+  if(days)pills.push({l:'📅 '+days.replace('-99999','+').replace('-',' – ')+' days',c:()=>{$('days-filter').value='';applyFilters();}});
+  $('pills').innerHTML=pills.map((p,i)=>`<div class="pill">${p.l}<button onclick="_pc(${i})">✕</button></div>`).join('');
   window._pc=i=>pills[i].c();
 }
 
-// ── TABLE ──────────────────────────────────────────────
+// ── TABLE ──
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function renderTable(){
-  const stage=document.getElementById('stage-filter').value;
-  document.getElementById('tbl-title').textContent=stage?(CAT_LABELS[stage]||stage)+' – Applications':'All Pending Applications';
-  const start=(currentPage-1)*PAGE_SIZE, page=filtered.slice(start,start+PAGE_SIZE);
-  document.getElementById('result-count').textContent=filtered.length
-    ?`Showing ${start+1}–${Math.min(start+PAGE_SIZE,filtered.length)} of ${filtered.length} records`:'No records found';
-  document.getElementById('tbody').innerHTML=page.map(r=>{
-    const d=r._days, dc=d<=30?'d0':d<=60?'d1':d<=90?'d2':d<=180?'d3':'d4';
-    const an=r['Application Number']||'—', task=r['Designation & Task Name']||'—';
+  const stage=val('stage-filter');
+  $('tbl-title').textContent=stage?CAT_LABELS[stage]+' – Applications':'All Pending Applications';
+  const start=(currentPage-1)*PAGE_SIZE,page=filtered.slice(start,start+PAGE_SIZE);
+  $('result-count').textContent=filtered.length?`Showing ${start+1}–${Math.min(start+PAGE_SIZE,filtered.length)} of ${filtered.length} records`:'No records found';
+  const cell=(v,w)=>`<td style="font-size:11px;max-width:${w}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(v)}">${esc(v)||'—'}</td>`;
+  $('tbody').innerHTML=page.map(r=>{
+    const d=r._days,dc=d<=30?'d0':d<=60?'d1':d<=90?'d2':d<=180?'d3':'d4';
+    const an=r['Application Number']||'—',task=r['Designation & Task Name']||'—';
     return `<tr>
-      <td class="mono">${r['S.no']||''}</td>
-      <td class="mono" title="${an}">${an.length>34?an.slice(0,34)+'…':an}</td>
+      <td class="mono">${esc(r['S.no'])}</td>
+      <td class="mono" title="${esc(an)}">${esc(an.length>34?an.slice(0,34)+'…':an)}</td>
+      <td style="white-space:nowrap;font-size:11px">${esc(r._submit)||'—'}</td>
+      ${cell(r['Owner Name'],140)}${cell(r['ULB Name'],120)}${cell(abbrevUDA(r['UDA Name']),140)}${cell(r['LTP Name'],120)}${cell(r['Assigned To'],130)}
+      <td style="white-space:nowrap;font-size:11px">${esc(r._assigned)||'—'}</td>
       <td style="text-align:center"><span class="${dc}">${d}</span></td>
-      <td style="white-space:nowrap;font-size:11px">${r._submit||'—'}</td>
-      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r['Owner Name']||''}">${r['Owner Name']||'—'}</td>
-      <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r['ULB Name']||''}">${r['ULB Name']||'—'}</td>
-      <td style="font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r['UDA Name']||''}">${abbrevUDA(r['UDA Name']||'—')}</td>
-      <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r['LTP Name']||''}">${r['LTP Name']||'—'}</td>
-      <td style="font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r['Assigned To']||''}">${r['Assigned To']||'—'}</td>
       <td><span class="cb cb-${r._cat}">${r._cat}</span></td>
-      <td style="font-size:10px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${task}">${task}</td>
+      ${cell(task,160)}
     </tr>`;
   }).join('');
   const tp=Math.ceil(filtered.length/PAGE_SIZE)||1;
-  document.getElementById('page-info').textContent=`Page ${currentPage} of ${tp}`;
-  document.getElementById('btn-prev').disabled=currentPage<=1;
-  document.getElementById('btn-next').disabled=currentPage>=tp;
-  let nums='';
-  const s2=Math.max(1,currentPage-2),e2=Math.min(tp,currentPage+2);
+  $('page-info').textContent=`Page ${currentPage} of ${tp}`;
+  $('btn-prev').disabled=currentPage<=1; $('btn-next').disabled=currentPage>=tp;
+  let nums='';const s2=Math.max(1,currentPage-2),e2=Math.min(tp,currentPage+2);
   if(s2>1)nums+=`<button class="pb" onclick="goPage(1)">1</button>${s2>2?'<span style="padding:0 4px">…</span>':''}`;
   for(let p=s2;p<=e2;p++)nums+=`<button class="pb${p===currentPage?' active':''}" onclick="goPage(${p})">${p}</button>`;
   if(e2<tp)nums+=`${e2<tp-1?'<span style="padding:0 4px">…</span>':''}<button class="pb" onclick="goPage(${tp})">${tp}</button>`;
-  document.getElementById('page-nums').innerHTML=nums;
+  $('page-nums').innerHTML=nums;
 }
 function changePage(d){currentPage+=d;renderTable();}
 function goPage(p){currentPage=p;renderTable();}
 
-// ── CHARTS ─────────────────────────────────────────────
+// ── CHARTS ──
 const STAGE_C={ULB:'#1a5abf',UDA:'#6c3d9e',DTCP:'#d4840a',GOVT:'#1a7a4a',LTP:'#c0392b'};
-const UDA_C=['#1a3a6b','#1a5abf','#6c3d9e','#d4840a','#1a7a4a','#c0392b','#c45c0a','#2563eb','#7c3aed','#047857','#b45309'];
+const UDA_C=['#1a3a6b','#1a5abf','#6c3d9e','#d4840a','#1a7a4a','#c0392b','#c45c0a','#2563eb','#7c3aed','#047857','#b45309','#0e7490','#9d174d'];
 const AGE_C=['#1a7a4a','#d4840a','#c45c0a','#c0392b','#7c0a0a'];
+const STAGES=['ULB','UDA','DTCP','GOVT','LTP'];
 function getUDAData(d){const c={};d.forEach(r=>{if(r['UDA Name'])c[r['UDA Name']]=(c[r['UDA Name']]||0)+1;});const s=Object.entries(c).sort((a,b)=>b[1]-a[1]);return{labels:s.map(([k])=>abbrevUDA(k)),vals:s.map(([,v])=>v)};}
 function ageBuckets(d){return[[0,30],[31,60],[61,90],[91,180],[181,99999]].map(([lo,hi])=>d.filter(r=>r._days>=lo&&r._days<=hi).length);}
 function buildCharts(){
-  const ud=getUDAData(ALL_DATA);
-  charts.uda=new Chart(document.getElementById('chartUDA'),{type:'bar',data:{labels:ud.labels,datasets:[{data:ud.vals,backgroundColor:UDA_C.slice(0,ud.labels.length),borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#eef0f5'},ticks:{color:'#6b7a99',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#1a2540',font:{size:10}}}}}});
-  const stages=['ULB','UDA','DTCP','GOVT','LTP'];
-  charts.stage=new Chart(document.getElementById('chartStage'),{type:'doughnut',data:{labels:stages.map(s=>CAT_LABELS[s]),datasets:[{data:stages.map(s=>ALL_DATA.filter(r=>r._cat===s).length),backgroundColor:stages.map(s=>STAGE_C[s]),borderColor:'#fff',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:7,boxWidth:10}}}}});
-  charts.age=new Chart(document.getElementById('chartAge'),{type:'bar',data:{labels:['0–30','31–60','61–90','91–180','>180'],datasets:[{data:ageBuckets(ALL_DATA),backgroundColor:AGE_C,borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#1a2540',font:{size:11}}},y:{grid:{color:'#eef0f5'},ticks:{color:'#6b7a99',font:{size:10}}}}}});
+  const ud=getUDAData(filtered);
+  charts.uda=new Chart($('chartUDA'),{type:'bar',data:{labels:ud.labels,datasets:[{data:ud.vals,backgroundColor:UDA_C,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#eef0f5'},ticks:{font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+  charts.stage=new Chart($('chartStage'),{type:'doughnut',data:{labels:STAGES.map(s=>CAT_LABELS[s]),datasets:[{data:STAGES.map(s=>filtered.filter(r=>r._cat===s).length),backgroundColor:STAGES.map(s=>STAGE_C[s]),borderColor:'#fff',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:7,boxWidth:10}}}}});
+  charts.age=new Chart($('chartAge'),{type:'bar',data:{labels:['0–30','31–60','61–90','91–180','>180'],datasets:[{data:ageBuckets(filtered),backgroundColor:AGE_C,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#eef0f5'},ticks:{font:{size:10}}}}}});
 }
 function updateCharts(){
   if(!charts.uda)return;
   const ud=getUDAData(filtered);
-  charts.uda.data.labels=ud.labels;charts.uda.data.datasets[0].data=ud.vals;charts.uda.data.datasets[0].backgroundColor=UDA_C.slice(0,ud.labels.length);charts.uda.update('none');
-  const stages=['ULB','UDA','DTCP','GOVT','LTP'];
-  charts.stage.data.datasets[0].data=stages.map(s=>filtered.filter(r=>r._cat===s).length);charts.stage.update('none');
+  charts.uda.data.labels=ud.labels;charts.uda.data.datasets[0].data=ud.vals;charts.uda.update('none');
+  charts.stage.data.datasets[0].data=STAGES.map(s=>filtered.filter(r=>r._cat===s).length);charts.stage.update('none');
   charts.age.data.datasets[0].data=ageBuckets(filtered);charts.age.update('none');
 }
 
-// ── DOWNLOAD ───────────────────────────────────────────
-function downloadCSV(cat){
-  const rows=cat==='ALL'?ALL_DATA:ALL_DATA.filter(r=>r._cat===cat);
-  const cols=['S.no','Application Number','CLU Proposal Details','ULB Name','UDA Name','Owner Name','Owner Mobile Number','Submitted Date & Time','LTP Name','LTP Mobile Number','Assigned To','Designation & Task Name','Assigned Date & Time','No. of days pending'];
-  const SN={ULB:'Pending with ULB',UDA:'Pending with UDA',DTCP:'Pending with DTCP',GOVT:'Pending with GOVT',LTP:'Pending with LTP (Shortfall/Payment)'};
-  const esc=v=>'"'+(v||'').toString().replace(/"/g,'""')+'"';
-  const blob=new Blob([[...cols,'Pending Stage'].map(esc).join(',')+'\n'+rows.map(r=>[...cols.map(c=>esc(r[c])),esc(SN[r._cat]||r._cat)].join(',')).join('\n')],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`CLU_Pendency_${cat}_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+// ── DOWNLOAD (CSV / Excel / PDF) ──
+const SN={ULB:'Pending with ULB',UDA:'Pending with UDA',DTCP:'Pending with DTCP',GOVT:'Pending with GOVT',LTP:'Pending with LTP (Shortfall/Payment)'};
+const COLS=[
+  ['S.No',r=>r['S.no']],['Application Number',r=>r['Application Number']],['CLU Proposal Details',r=>r['CLU Proposal Details']],
+  ['Owner Name',r=>r['Owner Name']],['Owner Mobile',r=>r['Owner Mobile Number']],['ULB Name',r=>r['ULB Name']],['UDA Name',r=>r['UDA Name']],
+  ['LTP Name',r=>r['LTP Name']],['LTP Mobile',r=>r['LTP Mobile Number']],['Submitted Date',r=>r._submit],
+  ['Assigned To',r=>r['Assigned To']],['Assigned Date',r=>r._assigned],['Days Pending',r=>r._days],
+  ['Pending Stage',r=>SN[r._cat]||r._cat],['Designation & Task Name',r=>r['Designation & Task Name']]
+];
+const PDF_COLS=['S.No','Application Number','Owner Name','ULB Name','UDA Name','Assigned To','Assigned Date','Days Pending','Pending Stage'];
+// Stage buttons keep the UDA / ULB / range / search filters; "ALL" keeps the current stage tab too
+function exportRows(cat){return sortRows(ALL_DATA.filter(r=>matchRow(r,cat==='ALL'?val('stage-filter'):cat)));}
+function download(cat){
+  const rows=exportRows(cat);
+  if(!rows.length){alert('No records match the current filters.');return;}
+  const fmt=val('fmt'),stamp=new Date().toISOString().slice(0,10);
+  const label=cat==='ALL'?(val('stage-filter')||'ALL'):cat;
+  const name=`CLU_Pendency_${label}_${stamp}`;
+  const head=COLS.map(c=>c[0]),body=rows.map(r=>COLS.map(c=>c[1](r)==null?'':c[1](r)));
+  if(fmt==='xlsx'){
+    if(!window.XLSX){alert('Excel library failed to load. Check your internet connection.');return;}
+    const ws=XLSX.utils.aoa_to_sheet([head,...body]);
+    ws['!cols']=head.map((h,i)=>({wch:Math.min(40,Math.max(h.length,...body.slice(0,200).map(b=>String(b[i]).length))+2)}));
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'CLU Pendency');
+    XLSX.writeFile(wb,name+'.xlsx');
+  }else if(fmt==='pdf'){
+    if(!window.jspdf){alert('PDF library failed to load. Check your internet connection.');return;}
+    const doc=new jspdf.jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
+    const idx=PDF_COLS.map(n=>head.indexOf(n));
+    doc.setFontSize(13);doc.text('CLU Pendency Report – '+(SN[label]||'All Pending Applications'),30,32);
+    const f=[];
+    if(val('uda-filter'))f.push('UDA: '+val('uda-filter'));
+    if(val('ulb-filter'))f.push('ULB: '+val('ulb-filter'));
+    if(val('days-filter'))f.push('Range: '+val('days-filter').replace('-99999','+')+' days');
+    if(val('search-input'))f.push('Search: '+val('search-input'));
+    doc.setFontSize(9);doc.text(`Generated ${new Date().toLocaleString('en-IN')}  |  ${rows.length} records${f.length?'  |  '+f.join('  |  '):''}`,30,48);
+    doc.autoTable({head:[idx.map(i=>head[i])],body:body.map(b=>idx.map(i=>String(b[i]))),startY:58,styles:{fontSize:7.5,cellPadding:3},headStyles:{fillColor:[26,58,107]},margin:{left:30,right:30}});
+    doc.save(name+'.pdf');
+  }else{
+    const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+    const csv='\ufeff'+[head,...body].map(r=>r.map(q).join(',')).join('\n');
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=name+'.csv';a.click();
+  }
 }
 
-// ── UI UTILS ───────────────────────────────────────────
+// ── UI UTILS ──
 function abbrevUDA(n){return(n||'').replace('Urban Development Authority','UDA').replace('Metropolitan Region Development Authority','MRDA').replace('Capital Region Development Authority','CRDA').replace('Andhra Pradesh ','AP ');}
-function showLoader(b,msg){const l=document.getElementById('loader');l.classList.toggle('hidden',!b);if(msg)document.getElementById('loader-sub').textContent=msg;}
-function showNotice(type,title,body){const n=document.getElementById('notice-box');n.className='notice show '+type;document.getElementById('notice-title').innerHTML=title;document.getElementById('notice-body').innerHTML=body;}
-function hideNotice(){document.getElementById('notice-box').classList.remove('show');}
-function setStatus(t,c){document.getElementById('status-text').textContent=t;document.getElementById('status-dot').style.background=c;}
+function showLoader(b,msg){$('loader').classList.toggle('hidden',!b);if(msg)$('loader-sub').textContent=msg;}
+function showNotice(type,title,body){const n=$('notice-box');n.className='notice show '+type;$('notice-title').innerHTML=title;$('notice-body').innerHTML=body;}
+function hideNotice(){$('notice-box').classList.remove('show');}
+function setStatus(t,c){$('status-text').textContent=t;$('status-dot').style.background=c;}
 
-// ── BOOT ───────────────────────────────────────────────
-document.getElementById('today-date').textContent=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+$('today-date').textContent=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
 fetchData();
-setInterval(fetchData, 5*60*1000);
+setInterval(fetchData,5*60*1000);
 </script>
 </body>
 </html>
