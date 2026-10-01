@@ -199,7 +199,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
 
   <div class="charts-row">
     <div class="cc"><h3>Applications by UDA Authority</h3><div style="height:240px"><canvas id="chartUDA"></canvas></div></div>
-    <div class="cc"><h3>Stage-wise Distribution</h3><div style="height:240px"><canvas id="chartStage"></canvas></div></div>
+    <div class="cc"><h3>Designation-wise Files <span id="desig-note" style="text-transform:none;font-weight:600;color:var(--muted)"></span></h3><div id="wrapDesig" style="height:240px"><canvas id="chartDesig"></canvas></div></div>
     <div class="cc"><h3>Pendency Age Buckets</h3><div style="height:240px"><canvas id="chartAge"></canvas></div></div>
   </div>
 
@@ -212,7 +212,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
           <th>ULB</th><th>UDA Authority</th><th>LTP Name</th><th>Assigned To</th>
           <th onclick="tblSort('date')">Assigned Date</th>
           <th onclick="tblSort('days')">Days Pending ↓</th>
-          <th>Stage</th><th>Designation / Task</th>
+          <th>Stage</th><th>Task / Designation</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -428,17 +428,38 @@ const AGE_C=['#1a7a4a','#d4840a','#c45c0a','#c0392b','#7c0a0a'];
 const STAGES=['ULB','UDA','DTCP','GOVT','LTP'];
 function getUDAData(d){const c={};d.forEach(r=>{if(r['UDA Name'])c[r['UDA Name']]=(c[r['UDA Name']]||0)+1;});const s=Object.entries(c).sort((a,b)=>b[1]-a[1]);return{labels:s.map(([k])=>abbrevUDA(k)),vals:s.map(([,v])=>v)};}
 function ageBuckets(d){return[[0,30],[31,60],[61,90],[91,180],[181,99999]].map(([lo,hi])=>d.filter(r=>r._days>=lo&&r._days<=hi).length);}
+// Designation = first two parts of the task name, e.g. ULB_WPRS, ULB_TPBO, ULB_COM
+function desigOf(r){
+  const t=(r['Designation & Task Name']||'').trim(); if(!t)return 'Unknown';
+  const p=t.split('_'); return p.length>1?p[0]+'_'+p[1].trim().split(/[\s\-–]/)[0]:t;
+}
+const valueLabels={id:'valueLabels',afterDatasetsDraw(ch){
+  const ctx=ch.ctx,m=ch.getDatasetMeta(0);ctx.save();ctx.font='bold 10px Segoe UI,Arial';ctx.fillStyle='#1a2540';ctx.textBaseline='middle';
+  m.data.forEach((b,i)=>ctx.fillText(ch.data.datasets[0].data[i],b.x+5,b.y));ctx.restore();}};
+function updateDesig(){
+  if(!charts.desig)return;
+  const c={};filtered.forEach(r=>{const k=desigOf(r);c[k]=(c[k]||0)+1;});
+  const e=Object.entries(c).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  $('wrapDesig').style.height=Math.max(240,e.length*26+40)+'px';
+  const d=charts.desig.data;
+  d.labels=e.map(x=>x[0]);d.datasets[0].data=e.map(x=>x[1]);
+  d.datasets[0].backgroundColor=e.map(x=>STAGE_C[stageOf(x[0]+'_')]||'#6b7a99');
+  const sel=[val('stage-filter')&&CAT_LABELS[val('stage-filter')],val('uda-filter')&&abbrevUDA(val('uda-filter')),val('ulb-filter')].filter(Boolean);
+  $('desig-note').textContent=sel.length?'· '+sel.join(' › '):'';
+  charts.desig.update('none');
+}
 function buildCharts(){
   const ud=getUDAData(filtered);
   charts.uda=new Chart($('chartUDA'),{type:'bar',data:{labels:ud.labels,datasets:[{data:ud.vals,backgroundColor:UDA_C,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#eef0f5'},ticks:{font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
-  charts.stage=new Chart($('chartStage'),{type:'doughnut',data:{labels:STAGES.map(s=>CAT_LABELS[s]),datasets:[{data:STAGES.map(s=>filtered.filter(r=>r._cat===s).length),backgroundColor:STAGES.map(s=>STAGE_C[s]),borderColor:'#fff',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:7,boxWidth:10}}}}});
+  charts.desig=new Chart($('chartDesig'),{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:[],borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grace:'12%',grid:{color:'#eef0f5'},ticks:{precision:0,font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:10}}}}},plugins:[valueLabels]});
+  updateDesig();
   charts.age=new Chart($('chartAge'),{type:'bar',data:{labels:['0–30','31–60','61–90','91–180','>180'],datasets:[{data:ageBuckets(filtered),backgroundColor:AGE_C,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#eef0f5'},ticks:{font:{size:10}}}}}});
 }
 function updateCharts(){
   if(!charts.uda)return;
   const ud=getUDAData(filtered);
   charts.uda.data.labels=ud.labels;charts.uda.data.datasets[0].data=ud.vals;charts.uda.update('none');
-  charts.stage.data.datasets[0].data=STAGES.map(s=>filtered.filter(r=>r._cat===s).length);charts.stage.update('none');
+  updateDesig();
   charts.age.data.datasets[0].data=ageBuckets(filtered);charts.age.update('none');
 }
 
