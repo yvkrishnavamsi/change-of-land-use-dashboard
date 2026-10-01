@@ -73,6 +73,13 @@ main{padding:20px 28px;max-width:1500px}
 .dl-hint{font-size:11px;color:var(--muted);width:100%}
 .charts-row{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:16px;margin-bottom:20px}
 .cc{background:#fff;border-radius:10px;padding:18px 20px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.cc{min-width:0;overflow:hidden}
+.cc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+.cc-head h3{margin-bottom:2px}
+.cc-head p{font-size:11px;color:var(--muted)}
+.chip{background:#eef3fb;border:1px solid #d5e0f3;border-radius:10px;padding:5px 11px;text-align:center;line-height:1.15;flex-shrink:0}
+.chip b{display:block;font-size:17px;color:var(--ap-blue);font-weight:800}
+.chip span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
 .cc h3{font-size:11px;font-weight:700;color:var(--ap-blue);margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em}
 .tbl-outer{background:#fff;border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden}
 .tbl-top{padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);background:#f7f9fc;flex-wrap:wrap;gap:8px}
@@ -139,7 +146,6 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
     <div><h2>Change of Land Use – Pendency Report</h2><p>Days pending are counted from the date the file was assigned to the officer</p></div>
   </div>
   <div class="app-bar-right">
-    <button class="btn btn-dark" onclick="download('ALL')">⬇ Download Current View</button>
     <button class="btn btn-gold" onclick="fetchData()">🔄 Refresh Now</button>
   </div>
 </div>
@@ -198,8 +204,11 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
   </div>
 
   <div class="charts-row">
-    <div class="cc"><h3>Applications by UDA Authority</h3><div style="height:240px"><canvas id="chartUDA"></canvas></div></div>
-    <div class="cc"><h3>Designation-wise Files <span id="desig-note" style="text-transform:none;font-weight:600;color:var(--muted)"></span></h3><div id="wrapDesig" style="height:240px"><canvas id="chartDesig"></canvas></div></div>
+    <div class="cc cc-uda">
+      <div class="cc-head"><div><h3>Applications by UDA Authority</h3><p id="uda-sub">Pending files by Urban Development Authority</p></div></div>
+      <div style="height:222px"><canvas id="chartUDA"></canvas></div>
+    </div>
+    <div class="cc"><h3>Designation-wise Files <span id="desig-note" style="text-transform:none;font-weight:600;color:var(--muted)"></span></h3><div style="height:240px;display:flex;gap:10px;align-items:center"><div style="flex:1 1 52%;min-width:0;height:100%;position:relative"><canvas id="chartDesig"></canvas></div><div id="desig-legend" style="flex:1 1 48%;min-width:0;max-height:100%;overflow-y:auto;font-size:11px"></div></div></div>
     <div class="cc"><h3>Pendency Age Buckets</h3><div style="height:240px"><canvas id="chartAge"></canvas></div></div>
   </div>
 
@@ -433,32 +442,48 @@ function desigOf(r){
   const t=(r['Designation & Task Name']||'').trim(); if(!t)return 'Unknown';
   const p=t.split('_'); return p.length>1?p[0]+'_'+p[1].trim().split(/[\s\-–]/)[0]:t;
 }
-const valueLabels={id:'valueLabels',afterDatasetsDraw(ch){
-  const ctx=ch.ctx,m=ch.getDatasetMeta(0);ctx.save();ctx.font='bold 10px Segoe UI,Arial';ctx.fillStyle='#1a2540';ctx.textBaseline='middle';
-  m.data.forEach((b,i)=>ctx.fillText(ch.data.datasets[0].data[i],b.x+5,b.y));ctx.restore();}};
+const PIE_C=['#1a3a6b','#1a5abf','#6c3d9e','#d4840a','#1a7a4a','#c0392b','#0e7490','#9d174d'];
+const pieColor=i=>i<PIE_C.length?PIE_C[i]:`hsl(${(i*47+20)%360},55%,45%)`;
 function updateDesig(){
   if(!charts.desig)return;
   const c={};filtered.forEach(r=>{const k=desigOf(r);c[k]=(c[k]||0)+1;});
   const e=Object.entries(c).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
-  $('wrapDesig').style.height=Math.max(240,e.length*26+40)+'px';
+  const cols=e.map((x,i)=>pieColor(i));
   const d=charts.desig.data;
-  d.labels=e.map(x=>x[0]);d.datasets[0].data=e.map(x=>x[1]);
-  d.datasets[0].backgroundColor=e.map(x=>STAGE_C[stageOf(x[0]+'_')]||'#6b7a99');
+  d.labels=e.map(x=>x[0]);d.datasets[0].data=e.map(x=>x[1]);d.datasets[0].backgroundColor=cols;
+  $('desig-legend').innerHTML=e.map((x,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:2px 0"><span style="width:10px;height:10px;border-radius:2px;flex-shrink:0;background:${cols[i]}"></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(x[0])}">${esc(x[0])}</span><strong>${x[1]}</strong></div>`).join('')||'<span style="color:var(--muted)">No data</span>';
   const sel=[val('stage-filter')&&CAT_LABELS[val('stage-filter')],val('uda-filter')&&abbrevUDA(val('uda-filter')),val('ulb-filter')].filter(Boolean);
   $('desig-note').textContent=sel.length?'· '+sel.join(' › '):'';
   charts.desig.update('none');
 }
+// Value labels drawn at the end of each bar
+const udaLabels={id:'udaLabels',afterDatasetsDraw(ch){
+  const ctx=ch.ctx,m=ch.getDatasetMeta(0);ctx.save();ctx.font='700 11px Segoe UI,Arial';ctx.fillStyle='#1a3a6b';ctx.textBaseline='middle';
+  m.data.forEach((b,i)=>ctx.fillText(ch.data.datasets[0].data[i],b.x+6,b.y));ctx.restore();}};
+function updateUDA(){
+  if(!charts.uda)return;
+  const c={};filtered.forEach(r=>{const u=r['UDA Name'];if(u)c[u]=(c[u]||0)+1;});
+  const e=Object.entries(c).sort((a,b)=>b[1]-a[1]);
+  const total=e.reduce((t,x)=>t+x[1],0);
+  const d=charts.uda.data;
+  d.labels=e.map(x=>abbrevUDA(x[0]));d.datasets[0].data=e.map(x=>x[1]);d.datasets[0].backgroundColor=e.map((x,i)=>pieColor(i));
+  $('uda-sub').textContent=e.length?`${e.length} authorit${e.length===1?'y':'ies'} · highest: ${abbrevUDA(e[0][0])}`:'No UDA files for the current filters';
+  charts.uda.update('none');
+}
 function buildCharts(){
-  const ud=getUDAData(filtered);
-  charts.uda=new Chart($('chartUDA'),{type:'bar',data:{labels:ud.labels,datasets:[{data:ud.vals,backgroundColor:UDA_C,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#eef0f5'},ticks:{font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
-  charts.desig=new Chart($('chartDesig'),{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:[],borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grace:'12%',grid:{color:'#eef0f5'},ticks:{precision:0,font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:10}}}}},plugins:[valueLabels]});
+  charts.uda=new Chart($('chartUDA'),{type:'bar',data:{labels:[],datasets:[{data:[],borderRadius:6,borderSkipped:false,barPercentage:0.72,categoryPercentage:0.88,backgroundColor:[]}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:30}},plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a2540',padding:10,cornerRadius:8,displayColors:false,titleFont:{size:12,weight:'bold'},bodyFont:{size:12},callbacks:{label:c=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);return c.parsed.x+' files · '+Math.round(c.parsed.x/t*100)+'% of total';}}}},scales:{x:{display:false,beginAtZero:true,grace:'6%'},y:{grid:{display:false},border:{display:false},ticks:{autoSkip:false,color:'#1a2540',font:{size:10,weight:'600'}}}}},plugins:[udaLabels]});
+  updateUDA();
+  updateUDA();
+  charts.desig=new Chart($('chartDesig'),{type:'doughnut',data:{labels:[],datasets:[{data:[],backgroundColor:[],borderColor:'#fff',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);return ' '+c.parsed+' files ('+Math.round(c.parsed/t*100)+'%)';}}}}}});
+  updateDesig();
+  updateDesig();
+  updateDesig();
   updateDesig();
   charts.age=new Chart($('chartAge'),{type:'bar',data:{labels:['0–30','31–60','61–90','91–180','>180'],datasets:[{data:ageBuckets(filtered),backgroundColor:AGE_C,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#eef0f5'},ticks:{font:{size:10}}}}}});
 }
 function updateCharts(){
   if(!charts.uda)return;
-  const ud=getUDAData(filtered);
-  charts.uda.data.labels=ud.labels;charts.uda.data.datasets[0].data=ud.vals;charts.uda.update('none');
+  updateUDA();
   updateDesig();
   charts.age.data.datasets[0].data=ageBuckets(filtered);charts.age.update('none');
 }
