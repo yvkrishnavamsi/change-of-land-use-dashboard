@@ -558,8 +558,8 @@ function downloadAbstract(){
     {l:'Pending with ULB',n:S.ULB.length,c:'#1a5abf',bg:'#e8effb',sub:'Across '+nUlb+' ULB'+(nUlb===1?'':'s')},
     {l:'Pending with UDA',n:S.UDA.length,c:'#6c3d9e',bg:'#f1ebf8',sub:'Across '+nUda+' authorit'+(nUda===1?'y':'ies')+' (incl. APCRDA)'},
     {l:'Pending with LTP (Shortfall)',n:S.LTP.length,c:'#c0392b',bg:'#fbeaea',sub:'Shortfall / Payment'},
-    {l:'Pending with DT&CP Staff',n:S.DTCP.length,c:'#d4840a',bg:'#fdf3e0',sub:S.DTCP.length?'with '+withText(S.DTCP):''},
-    {l:'Pending with GOVT',n:S.GOVT.length,c:'#1a7a4a',bg:'#e5f4ec',sub:S.GOVT.length?'with '+withText(S.GOVT):''}
+    {l:'Pending with DT&CP Staff',n:S.DTCP.length,c:'#d4840a',bg:'#fdf3e0',sub:''},
+    {l:'Pending with GOVT',n:S.GOVT.length,c:'#1a7a4a',bg:'#e5f4ec',sub:''}
   ];
   const gap=8,bw=(W-2*M-5*gap)/6,by=74,bh=80;
   boxes.forEach((b,i)=>{
