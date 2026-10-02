@@ -146,6 +146,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
     <div><h2>Change of Land Use – Pendency Report</h2><p>Days pending are counted from the date the file was assigned to the officer</p></div>
   </div>
   <div class="app-bar-right">
+    <button class="btn btn-dark" onclick="downloadAbstract()">📑 Download Abstract</button>
     <button class="btn btn-gold" onclick="fetchData()">🔄 Refresh Now</button>
   </div>
 </div>
@@ -531,6 +532,74 @@ function download(cat){
     const csv='\ufeff'+[head,...body].map(r=>r.map(q).join(',')).join('\n');
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=name+'.csv';a.click();
   }
+}
+
+// ── ABSTRACT (PDF) ──
+function roleOf(r){const t=(r['Designation & Task Name']||'').trim();const p=t.split('_');return p.length>1?p[1].trim().split(/[\s\-–]/)[0]:(t||'—');}
+function roleCounts(list){const c={};list.forEach(r=>{const k=roleOf(r);c[k]=(c[k]||0)+1;});return Object.entries(c).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));}
+function withText(list){return roleCounts(list).map(([k,v])=>k+'-'+v).join(', ');}
+function groupBy(list,key){const m={};list.forEach(r=>{const k=(r[key]||'Not specified').trim();(m[k]=m[k]||[]).push(r);});return Object.entries(m).sort((a,b)=>a[0].localeCompare(b[0]));}
+function downloadAbstract(){
+  if(!ALL_DATA.length){alert('Data is not loaded yet.');return;}
+  if(!window.jspdf){alert('PDF library failed to load. Check your internet connection.');return;}
+  const doc=new jspdf.jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
+  const W=842,M=30,S={};STAGES.forEach(st=>S[st]=ALL_DATA.filter(r=>r._cat===st));
+  const today=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+  // header band
+  doc.setFillColor('#1a3a6b');doc.rect(0,0,W,56,'F');doc.setFillColor('#e8a020');doc.rect(0,56,W,3,'F');
+  doc.setTextColor('#ffffff');doc.setFont('helvetica','bold');doc.setFontSize(13);
+  doc.text('Government of Andhra Pradesh – Directorate of Town & Country Planning',M,24);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text('Change of Land Use (CLU) Applications Dashboard – Abstract',M,42);
+  doc.setFontSize(9);doc.text('As on '+today,W-M,24,{align:'right'});
+  // summary boxes
+  const nUlb=new Set(S.ULB.map(r=>r['ULB Name'])).size,nUda=new Set(S.UDA.map(r=>r['UDA Name'])).size;
+  const boxes=[
+    {l:'Total Applications Submitted / Received',n:ALL_DATA.length,c:'#1a3a6b',bg:'#1a3a6b',sub:'All stages combined',w:1},
+    {l:'Pending with ULB',n:S.ULB.length,c:'#1a5abf',bg:'#e8effb',sub:'Across '+nUlb+' ULB'+(nUlb===1?'':'s')},
+    {l:'Pending with UDA',n:S.UDA.length,c:'#6c3d9e',bg:'#f1ebf8',sub:'Across '+nUda+' authorit'+(nUda===1?'y':'ies')+' (incl. APCRDA)'},
+    {l:'Pending with LTP (Shortfall)',n:S.LTP.length,c:'#c0392b',bg:'#fbeaea',sub:'Shortfall / Payment'},
+    {l:'Pending with DT&CP Staff',n:S.DTCP.length,c:'#d4840a',bg:'#fdf3e0',sub:S.DTCP.length?'with '+withText(S.DTCP):''},
+    {l:'Pending with GOVT',n:S.GOVT.length,c:'#1a7a4a',bg:'#e5f4ec',sub:S.GOVT.length?'with '+withText(S.GOVT):''}
+  ];
+  const gap=8,bw=(W-2*M-5*gap)/6,by=74,bh=80;
+  boxes.forEach((b,i)=>{
+    const x=M+i*(bw+gap);doc.setFillColor(b.bg);doc.roundedRect(x,by,bw,bh,5,5,'F');
+    if(!b.w){doc.setFillColor(b.c);doc.rect(x,by+6,3.5,bh-12,'F');}
+    const fg=b.w?'#ffffff':b.c;
+    doc.setTextColor(fg);doc.setFont('helvetica','bold');doc.setFontSize(8);doc.text(doc.splitTextToSize(b.l,bw-18),x+11,by+14);
+    doc.setFontSize(24);doc.text(String(b.n),x+11,by+48);
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(b.w?'#dbe4f5':'#56627f');
+    doc.text(doc.splitTextToSize(b.sub||'',bw-18).slice(0,3),x+11,by+58);
+  });
+  let y=by+bh+20;
+  function section(title,color,head,body,foot,cs){
+    if(y>480){doc.addPage();y=40;}
+    doc.setFillColor(color);doc.rect(M,y,W-2*M,20,'F');doc.setTextColor('#ffffff');doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(title,M+8,y+13.5);
+    doc.autoTable({startY:y+20,head:[head],body:body.length?body:[['','No files pending',...head.slice(2).map(()=>'')]],foot:[foot],showFoot:'lastPage',theme:'grid',
+      styles:{fontSize:8.5,cellPadding:4,lineColor:'#dde3ed',lineWidth:0.5,textColor:'#1a2540',valign:'middle'},
+      headStyles:{fillColor:'#eef2f9',textColor:'#1a2540',fontStyle:'bold'},footStyles:{fillColor:'#eef2f9',textColor:color,fontStyle:'bold'},
+      alternateRowStyles:{fillColor:'#fafbfd'},columnStyles:cs,margin:{left:M,right:M,bottom:40}});
+    y=doc.lastAutoTable.finalY+16;
+  }
+  const cs4={0:{cellWidth:36,halign:'center'},1:{cellWidth:300},2:{cellWidth:70,halign:'center',fontStyle:'bold'}};
+  const cs3={0:{cellWidth:36,halign:'center'},1:{cellWidth:300},2:{cellWidth:70,halign:'center',fontStyle:'bold'}};
+  const grp=(list,key,title,color,label)=>section(title+' – '+list.length,color,['S.No',label,'Files','Pending With (Designation-Files)'],
+    groupBy(list,key).map(([k,l],i)=>[i+1,k,l.length,withText(l)]),['','Total',list.length,''],cs4);
+  grp(S.ULB,'ULB Name','Pending with ULB','#1a5abf','Urban Local Body (ULB)');
+  grp(S.UDA,'UDA Name','Pending with UDA','#6c3d9e','Urban Development Authority (UDA)');
+  const des=(list,title,color)=>section(title+' – '+list.length,color,['S.No','Designation','Files'],
+    roleCounts(list).map(([k,v],i)=>[i+1,k,v]),['','Total',list.length],cs3);
+  des(S.DTCP,'Pending with DT&CP Staff','#d4840a');
+  des(S.GOVT,'Pending with GOVT','#1a7a4a');
+  section('Pending with LTP (Shortfall / Payment) – '+S.LTP.length,'#c0392b',['S.No','Description','Files'],
+    S.LTP.length?[[1,'Applications awaiting action from the Licensed Technical Person',S.LTP.length]]:[],['','Total',S.LTP.length],cs3);
+  const other=ALL_DATA.length-STAGES.reduce((t,st)=>t+S[st].length,0);
+  if(other>0){doc.setTextColor('#56627f');doc.setFont('helvetica','italic');doc.setFontSize(8);doc.text(other+' file(s) have a task name that could not be classified into a stage.',M,y);}
+  // footer
+  const n=doc.getNumberOfPages();
+  for(let i=1;i<=n;i++){doc.setPage(i);doc.setDrawColor('#dde3ed');doc.line(M,563,W-M,563);doc.setTextColor('#6b7a99');doc.setFont('helvetica','normal');doc.setFontSize(8);
+    doc.text('CLU Pendency Dashboard · DTCP Andhra Pradesh · Generated '+new Date().toLocaleString('en-IN'),M,577);doc.text('Page '+i+' of '+n,W-M,577,{align:'right'});}
+  doc.save('CLU_Abstract_'+new Date().toISOString().slice(0,10)+'.pdf');
 }
 
 // ── UI UTILS ──
