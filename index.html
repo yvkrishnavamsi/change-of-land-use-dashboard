@@ -95,7 +95,8 @@ tbody tr:nth-child(even){background:#fafbfd}
 td{padding:8px 13px;vertical-align:middle}
 td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
 .cb{display:inline-block;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700}
-.cb-ULB{background:#dbeafe;color:#1a5abf}.cb-UDA{background:#ede9fe;color:#6c3d9e}.cb-DTCP{background:#fef3c7;color:#d4840a}.cb-GOVT{background:#d1fae5;color:#1a7a4a}.cb-LTP{background:#fee2e2;color:#c0392b}
+.cb-ULB{background:#dbeafe;color:#1a5abf}.cb-UDA{background:#ede9fe;color:#6c3d9e}.cb-DTCP{background:#fef3c7;color:#d4840a}.cb-GOVT{background:#cffafe;color:#0e7490}.cb-LTP{background:#fce7f3;color:#be185d}
+.cb-APPROVED{background:#d1fae5;color:#047857}.cb-REJECTED{background:#fee2e2;color:#b91c1c}.cb-CLOSED{background:#e5e7eb;color:#374151}
 .d0{color:#1a7a4a;font-weight:700}.d1{color:#d4840a;font-weight:700}.d2{color:#c45c0a;font-weight:700}.d3{color:#c0392b;font-weight:700}
 .d4{color:#7c0a0a;font-weight:700;background:#fff0f0;border-radius:4px;padding:2px 6px}
 .pagination{display:flex;justify-content:space-between;align-items:center;padding:11px 20px;border-top:1px solid var(--border);background:#f7f9fc;flex-wrap:wrap;gap:8px}
@@ -165,6 +166,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
     <select id="stage-filter">
       <option value="">All Stages</option><option value="ULB">Pending with ULB</option><option value="UDA">Pending with UDA</option>
       <option value="DTCP">Pending with DTCP</option><option value="GOVT">Pending with GOVT</option><option value="LTP">Pending with LTP</option>
+      <option value="APPROVED">Approved</option><option value="REJECTED">Rejected</option><option value="CLOSED">Closed</option>
     </select></div>
   <div class="fg"><label>UDA Authority</label><select id="uda-filter"><option value="">All UDAs</option></select></div>
   <div class="fg"><label>ULB</label><select id="ulb-filter"><option value="">All ULBs</option></select></div>
@@ -188,8 +190,11 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
     <div class="kpi" style="--cc:#1a5abf" onclick="setStage('ULB')"><div class="kpi-label">Pending with ULB</div><div class="kpi-val" id="k-ulb">—</div><div class="kpi-sub">Urban Local Body</div><div class="kpi-icon">🏙️</div></div>
     <div class="kpi" style="--cc:#6c3d9e" onclick="setStage('UDA')"><div class="kpi-label">Pending with UDA</div><div class="kpi-val" id="k-uda">—</div><div class="kpi-sub">UDAs incl. APCRDA</div><div class="kpi-icon">🏢</div></div>
     <div class="kpi" style="--cc:#d4840a" onclick="setStage('DTCP')"><div class="kpi-label">Pending with DTCP</div><div class="kpi-val" id="k-dtcp">—</div><div class="kpi-sub">Town &amp; Country Planning</div><div class="kpi-icon">📐</div></div>
-    <div class="kpi" style="--cc:#1a7a4a" onclick="setStage('GOVT')"><div class="kpi-label">Pending with GOVT</div><div class="kpi-val" id="k-govt">—</div><div class="kpi-sub">Government</div><div class="kpi-icon">🏛️</div></div>
-    <div class="kpi" style="--cc:#c0392b" onclick="setStage('LTP')"><div class="kpi-label">Pending with LTP</div><div class="kpi-val" id="k-ltp">—</div><div class="kpi-sub">Shortfall / Payment</div><div class="kpi-icon">📄</div></div>
+    <div class="kpi" style="--cc:#0e7490" onclick="setStage('GOVT')"><div class="kpi-label">Pending with GOVT</div><div class="kpi-val" id="k-govt">—</div><div class="kpi-sub">Government</div><div class="kpi-icon">🏛️</div></div>
+    <div class="kpi" style="--cc:#be185d" onclick="setStage('LTP')"><div class="kpi-label">Pending with LTP</div><div class="kpi-val" id="k-ltp">—</div><div class="kpi-sub">Shortfall / Payment</div><div class="kpi-icon">📄</div></div>
+    <div class="kpi" style="--cc:#047857" onclick="setStage('APPROVED')"><div class="kpi-label">Approved</div><div class="kpi-val" id="k-approved">—</div><div class="kpi-sub">Files approved</div><div class="kpi-icon">✅</div></div>
+    <div class="kpi" style="--cc:#b91c1c" onclick="setStage('REJECTED')"><div class="kpi-label">Rejected</div><div class="kpi-val" id="k-rejected">—</div><div class="kpi-sub">Files rejected</div><div class="kpi-icon">❌</div></div>
+    <div class="kpi" style="--cc:#374151" onclick="setStage('CLOSED')"><div class="kpi-label">Closed</div><div class="kpi-val" id="k-closed">—</div><div class="kpi-sub">Files closed</div><div class="kpi-icon">📁</div></div>
   </div>
 
   <div class="dl-row">
@@ -199,9 +204,12 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
     <button class="dl-btn" style="background:#1a5abf" onclick="download('ULB')">🏙️ ULB</button>
     <button class="dl-btn" style="background:#6c3d9e" onclick="download('UDA')">🏢 UDA</button>
     <button class="dl-btn" style="background:#d4840a" onclick="download('DTCP')">📐 DTCP</button>
-    <button class="dl-btn" style="background:#1a7a4a" onclick="download('GOVT')">🏛️ GOVT</button>
-    <button class="dl-btn" style="background:#c0392b" onclick="download('LTP')">📄 LTP</button>
-    <div class="dl-hint">Downloads follow the selected UDA, ULB, range and search filters. “All Pending” follows the current stage tab too.</div>
+    <button class="dl-btn" style="background:#0e7490" onclick="download('GOVT')">🏛️ GOVT</button>
+    <button class="dl-btn" style="background:#be185d" onclick="download('LTP')">📄 LTP</button>
+    <button class="dl-btn" style="background:#047857" onclick="download('APPROVED')">✅ Approved</button>
+    <button class="dl-btn" style="background:#b91c1c" onclick="download('REJECTED')">❌ Rejected</button>
+    <button class="dl-btn" style="background:#374151" onclick="download('CLOSED')">📁 Closed</button>
+    <div class="dl-hint">Downloads follow the selected UDA, ULB, range and search filters. “All Pending” follows the current stage tab too (and excludes Approved / Rejected / Closed unless that tab is selected).</div>
   </div>
 
   <div class="charts-row">
@@ -241,7 +249,9 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbyu6ecW9iuDVcrZfudzRMeI0_Sn6eXFqm2i9TRMOAskhyUcEXO_P_4mtbSWhC7d4lj0xw/exec';
 
-const CAT_LABELS = {ULB:'Pending with ULB',UDA:'Pending with UDA',DTCP:'Pending with DTCP',GOVT:'Pending with GOVT',LTP:'Pending with LTP'};
+const CAT_LABELS={ULB:'Pending with ULB',UDA:'Pending with UDA',DTCP:'Pending with DTCP',GOVT:'Pending with GOVT',LTP:'Pending with LTP',APPROVED:'Approved',REJECTED:'Rejected',CLOSED:'Closed'};
+const FINAL=['APPROVED','REJECTED','CLOSED'];
+const isPending=r=>!FINAL.includes(r._cat);
 let ALL_DATA=[], filtered=[], currentPage=1, charts={};
 const PAGE_SIZE=20;
 const $=id=>document.getElementById(id);
@@ -269,6 +279,10 @@ function loadRows(rows){
 
 // APCRDA now counts as UDA
 function stageOf(task){
+  const t0=task.trim().toLowerCase();
+  if(t0.startsWith('approved')) return 'APPROVED';
+  if(t0.startsWith('rejected')) return 'REJECTED';
+  if(t0.startsWith('closed')) return 'CLOSED';
   if(task.startsWith('ULB_')) return 'ULB';
   if(task.startsWith('UDA_')||task.startsWith('Metro')||task.startsWith('APCRDA_')||task.startsWith('CRDA_')) return 'UDA';
   if(task.startsWith('DTCP_')) return 'DTCP';
@@ -379,9 +393,10 @@ function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f
 function renderKPIs(){
   $('k-total').textContent=filtered.length;
   // stage cards respect the other filters, so they always add up
-  ['ULB','UDA','DTCP','GOVT','LTP'].forEach(c=>$('k-'+c.toLowerCase()).textContent=ALL_DATA.filter(r=>matchRow(r,c)).length);
-  $('stat-crit').textContent=ALL_DATA.filter(r=>r._days>180).length;
-  $('stat-avg').textContent=ALL_DATA.length?Math.round(ALL_DATA.reduce((s,r)=>s+r._days,0)/ALL_DATA.length):0;
+  ['ULB','UDA','DTCP','GOVT','LTP','APPROVED','REJECTED','CLOSED'].forEach(c=>$('k-'+c.toLowerCase()).textContent=ALL_DATA.filter(r=>matchRow(r,c)).length);
+  const PEND=ALL_DATA.filter(isPending);
+  $('stat-crit').textContent=PEND.filter(r=>r._days>180).length;
+  $('stat-avg').textContent=PEND.length?Math.round(PEND.reduce((s,r)=>s+r._days,0)/PEND.length):0;
   const sv=val('stage-filter');
   document.querySelectorAll('.kpi').forEach(el=>el.classList.toggle('active',el.getAttribute('onclick')===`setStage('${sv}')`));
 }
@@ -401,7 +416,7 @@ function renderPills(){
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function renderTable(){
   const stage=val('stage-filter');
-  $('tbl-title').textContent=stage?CAT_LABELS[stage]+' – Applications':'All Pending Applications';
+  $('tbl-title').textContent=stage?CAT_LABELS[stage]+' – Applications':'All Applications';
   const start=(currentPage-1)*PAGE_SIZE,page=filtered.slice(start,start+PAGE_SIZE);
   $('result-count').textContent=filtered.length?`Showing ${start+1}–${Math.min(start+PAGE_SIZE,filtered.length)} of ${filtered.length} records`:'No records found';
   const cell=(v,w)=>`<td style="font-size:11px;max-width:${w}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(v)}">${esc(v)||'—'}</td>`;
@@ -414,7 +429,7 @@ function renderTable(){
       <td style="white-space:nowrap;font-size:11px">${esc(r._submit)||'—'}</td>
       ${cell(r['Owner Name'],140)}${cell(r['ULB Name'],120)}${cell(abbrevUDA(r['UDA Name']),140)}${cell(r['LTP Name'],120)}${cell(r['Assigned To'],130)}
       <td style="white-space:nowrap;font-size:11px">${esc(r._assigned)||'—'}</td>
-      <td style="text-align:center"><span class="${dc}">${d}</span></td>
+      <td style="text-align:center">${FINAL.includes(r._cat)?'—':`<span class="${dc}">${d}</span>`}</td>
       <td><span class="cb cb-${r._cat}">${r._cat}</span></td>
       ${cell(task,160)}
     </tr>`;
@@ -432,12 +447,12 @@ function changePage(d){currentPage+=d;renderTable();}
 function goPage(p){currentPage=p;renderTable();}
 
 // ── CHARTS ──
-const STAGE_C={ULB:'#1a5abf',UDA:'#6c3d9e',DTCP:'#d4840a',GOVT:'#1a7a4a',LTP:'#c0392b'};
+const STAGE_C={ULB:'#1a5abf',UDA:'#6c3d9e',DTCP:'#d4840a',GOVT:'#0e7490',LTP:'#be185d'};
 const UDA_C=['#1a3a6b','#1a5abf','#6c3d9e','#d4840a','#1a7a4a','#c0392b','#c45c0a','#2563eb','#7c3aed','#047857','#b45309','#0e7490','#9d174d'];
 const AGE_C=['#1a7a4a','#d4840a','#c45c0a','#c0392b','#7c0a0a'];
 const STAGES=['ULB','UDA','DTCP','GOVT','LTP'];
 function getUDAData(d){const c={};d.forEach(r=>{if(r['UDA Name'])c[r['UDA Name']]=(c[r['UDA Name']]||0)+1;});const s=Object.entries(c).sort((a,b)=>b[1]-a[1]);return{labels:s.map(([k])=>abbrevUDA(k)),vals:s.map(([,v])=>v)};}
-function ageBuckets(d){return[[0,30],[31,60],[61,90],[91,180],[181,99999]].map(([lo,hi])=>d.filter(r=>r._days>=lo&&r._days<=hi).length);}
+function ageBuckets(d){d=d.filter(isPending);return[[0,30],[31,60],[61,90],[91,180],[181,99999]].map(([lo,hi])=>d.filter(r=>r._days>=lo&&r._days<=hi).length);}
 // Designation = first two parts of the task name, e.g. ULB_WPRS, ULB_TPBO, ULB_COM
 function desigOf(r){
   const t=(r['Designation & Task Name']||'').trim(); if(!t)return 'Unknown';
@@ -474,11 +489,7 @@ function updateUDA(){
 function buildCharts(){
   charts.uda=new Chart($('chartUDA'),{type:'bar',data:{labels:[],datasets:[{data:[],borderRadius:6,borderSkipped:false,barPercentage:0.72,categoryPercentage:0.88,backgroundColor:[]}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:30}},plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a2540',padding:10,cornerRadius:8,displayColors:false,titleFont:{size:12,weight:'bold'},bodyFont:{size:12},callbacks:{label:c=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);return c.parsed.x+' files · '+Math.round(c.parsed.x/t*100)+'% of total';}}}},scales:{x:{display:false,beginAtZero:true,grace:'6%'},y:{grid:{display:false},border:{display:false},ticks:{autoSkip:false,color:'#1a2540',font:{size:10,weight:'600'}}}}},plugins:[udaLabels]});
   updateUDA();
-  updateUDA();
   charts.desig=new Chart($('chartDesig'),{type:'doughnut',data:{labels:[],datasets:[{data:[],backgroundColor:[],borderColor:'#fff',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);return ' '+c.parsed+' files ('+Math.round(c.parsed/t*100)+'%)';}}}}}});
-  updateDesig();
-  updateDesig();
-  updateDesig();
   updateDesig();
   charts.age=new Chart($('chartAge'),{type:'bar',data:{labels:['0–30','31–60','61–90','91–180','>180'],datasets:[{data:ageBuckets(filtered),backgroundColor:AGE_C,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#eef0f5'},ticks:{font:{size:10}}}}}});
 }
@@ -490,17 +501,21 @@ function updateCharts(){
 }
 
 // ── DOWNLOAD (CSV / Excel / PDF) ──
-const SN={ULB:'Pending with ULB',UDA:'Pending with UDA',DTCP:'Pending with DTCP',GOVT:'Pending with GOVT',LTP:'Pending with LTP (Shortfall/Payment)'};
+const SN={ULB:'Pending with ULB',UDA:'Pending with UDA',DTCP:'Pending with DTCP',GOVT:'Pending with GOVT',LTP:'Pending with LTP (Shortfall/Payment)',APPROVED:'Approved',REJECTED:'Rejected',CLOSED:'Closed'};
 const COLS=[
   ['S.No',r=>r['S.no']],['Application Number',r=>r['Application Number']],['CLU Proposal Details',r=>r['CLU Proposal Details']],
   ['Owner Name',r=>r['Owner Name']],['Owner Mobile',r=>r['Owner Mobile Number']],['ULB Name',r=>r['ULB Name']],['UDA Name',r=>r['UDA Name']],
   ['LTP Name',r=>r['LTP Name']],['LTP Mobile',r=>r['LTP Mobile Number']],['Submitted Date',r=>r._submit],
-  ['Assigned To',r=>r['Assigned To']],['Assigned Date',r=>r._assigned],['Days Pending',r=>r._days],
+  ['Assigned To',r=>r['Assigned To']],['Assigned Date',r=>r._assigned],['Days Pending',r=>FINAL.includes(r._cat)?'':r._days],
   ['Pending Stage',r=>SN[r._cat]||r._cat],['Designation & Task Name',r=>r['Designation & Task Name']]
 ];
 const PDF_COLS=['S.No','Application Number','Owner Name','ULB Name','UDA Name','Assigned To','Assigned Date','Days Pending','Pending Stage'];
 // Stage buttons keep the UDA / ULB / range / search filters; "ALL" keeps the current stage tab too
-function exportRows(cat){return sortRows(ALL_DATA.filter(r=>matchRow(r,cat==='ALL'?val('stage-filter'):cat)));}
+// "ALL" with no stage tab selected exports pending files only
+function exportRows(cat){
+  const rows=ALL_DATA.filter(r=>matchRow(r,cat==='ALL'?val('stage-filter'):cat));
+  return sortRows(cat==='ALL'&&!val('stage-filter')?rows.filter(isPending):rows);
+}
 function download(cat){
   const rows=exportRows(cat);
   if(!rows.length){alert('No records match the current filters.');return;}
@@ -557,9 +572,9 @@ function downloadAbstract(){
     {l:'Total Applications Submitted / Received',n:ALL_DATA.length,c:'#1a3a6b',bg:'#1a3a6b',sub:'All stages combined',w:1},
     {l:'Pending with ULB',n:S.ULB.length,c:'#1a5abf',bg:'#e8effb',sub:'Across '+nUlb+' ULB'+(nUlb===1?'':'s')},
     {l:'Pending with UDA',n:S.UDA.length,c:'#6c3d9e',bg:'#f1ebf8',sub:'Across '+nUda+' authorit'+(nUda===1?'y':'ies')+' (incl. APCRDA)'},
-    {l:'Pending with LTP (Shortfall)',n:S.LTP.length,c:'#c0392b',bg:'#fbeaea',sub:'Shortfall / Payment'},
+    {l:'Pending with LTP (Shortfall)',n:S.LTP.length,c:'#be185d',bg:'#fce7f3',sub:'Shortfall / Payment'},
     {l:'Pending with DT&CP Staff',n:S.DTCP.length,c:'#d4840a',bg:'#fdf3e0',sub:''},
-    {l:'Pending with GOVT',n:S.GOVT.length,c:'#1a7a4a',bg:'#e5f4ec',sub:''}
+    {l:'Pending with GOVT',n:S.GOVT.length,c:'#0e7490',bg:'#e0f4f8',sub:''}
   ];
   const gap=8,bw=(W-2*M-5*gap)/6,by=74,bh=80;
   boxes.forEach((b,i)=>{
@@ -590,10 +605,10 @@ function downloadAbstract(){
   const des=(list,title,color)=>section(title+' – '+list.length,color,['S.No','Designation','Files'],
     roleCounts(list).map(([k,v],i)=>[i+1,k,v]),['','Total',list.length],cs3);
   des(S.DTCP,'Pending with DT&CP Staff','#d4840a');
-  des(S.GOVT,'Pending with GOVT','#1a7a4a');
-  section('Pending with LTP (Shortfall / Payment) – '+S.LTP.length,'#c0392b',['S.No','Description','Files'],
+  des(S.GOVT,'Pending with GOVT','#0e7490');
+  section('Pending with LTP (Shortfall / Payment) – '+S.LTP.length,'#be185d',['S.No','Description','Files'],
     S.LTP.length?[[1,'Applications awaiting action from the Licensed Technical Person',S.LTP.length]]:[],['','Total',S.LTP.length],cs3);
-  const other=ALL_DATA.length-STAGES.reduce((t,st)=>t+S[st].length,0);
+  const other=ALL_DATA.filter(r=>r._cat==='OTHER').length;
   if(other>0){doc.setTextColor('#56627f');doc.setFont('helvetica','italic');doc.setFontSize(8);doc.text(other+' file(s) have a task name that could not be classified into a stage.',M,y);}
   // footer
   const n=doc.getNumberOfPages();
