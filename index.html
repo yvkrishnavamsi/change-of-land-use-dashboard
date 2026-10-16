@@ -94,6 +94,7 @@ tbody tr:hover,tbody tr:nth-child(even):hover{background:#f0f4ff}
 tbody tr:nth-child(even){background:#fafbfd}
 td{padding:8px 13px;vertical-align:middle}
 td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
+.fin-view .hx{display:none}table.fin-view{min-width:0}
 .cb{display:inline-block;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700}
 .cb-ULB{background:#dbeafe;color:#1a5abf}.cb-UDA{background:#ede9fe;color:#6c3d9e}.cb-DTCP{background:#fef3c7;color:#d4840a}.cb-GOVT{background:#cffafe;color:#0e7490}.cb-LTP{background:#fce7f3;color:#be185d}
 .cb-APPROVED{background:#d1fae5;color:#047857}.cb-REJECTED{background:#fee2e2;color:#b91c1c}.cb-CLOSED{background:#e5e7eb;color:#374151}
@@ -170,6 +171,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
     </select></div>
   <div class="fg"><label>UDA Authority</label><select id="uda-filter"><option value="">All UDAs</option></select></div>
   <div class="fg"><label>ULB</label><select id="ulb-filter"><option value="">All ULBs</option></select></div>
+  <div class="fg"><label>Designation</label><select id="desig-filter"><option value="">All Designations</option></select></div>
   <div class="fg"><label>Pendency Range</label>
     <select id="days-filter">
       <option value="">All</option><option value="0-30">0–30 days</option><option value="31-60">31–60 days</option>
@@ -186,7 +188,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
 <main>
   <div class="pills" id="pills"></div>
   <div class="kpi-row">
-    <div class="kpi" style="--cc:#1a3a6b" onclick="setStage('')"><div class="kpi-label">Total Received / Pending</div><div class="kpi-val" id="k-total">—</div><div class="kpi-sub">All stages combined</div><div class="kpi-icon">📋</div></div>
+    <div class="kpi" style="--cc:#1a3a6b" onclick="setStage('')"><div class="kpi-label">Total Submitted / Received</div><div class="kpi-val" id="k-total">—</div><div class="kpi-sub">All stages combined</div><div class="kpi-icon">📋</div></div>
     <div class="kpi" style="--cc:#1a5abf" onclick="setStage('ULB')"><div class="kpi-label">Pending with ULB</div><div class="kpi-val" id="k-ulb">—</div><div class="kpi-sub">Urban Local Body</div><div class="kpi-icon">🏙️</div></div>
     <div class="kpi" style="--cc:#6c3d9e" onclick="setStage('UDA')"><div class="kpi-label">Pending with UDA</div><div class="kpi-val" id="k-uda">—</div><div class="kpi-sub">UDAs incl. APCRDA</div><div class="kpi-icon">🏢</div></div>
     <div class="kpi" style="--cc:#d4840a" onclick="setStage('DTCP')"><div class="kpi-label">Pending with DTCP</div><div class="kpi-val" id="k-dtcp">—</div><div class="kpi-sub">Town &amp; Country Planning</div><div class="kpi-icon">📐</div></div>
@@ -209,7 +211,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
     <button class="dl-btn" style="background:#047857" onclick="download('APPROVED')">✅ Approved</button>
     <button class="dl-btn" style="background:#b91c1c" onclick="download('REJECTED')">❌ Rejected</button>
     <button class="dl-btn" style="background:#374151" onclick="download('CLOSED')">📁 Closed</button>
-    <div class="dl-hint">Downloads follow the selected UDA, ULB, range and search filters. “All Pending” follows the current stage tab too (and excludes Approved / Rejected / Closed unless that tab is selected).</div>
+    <div class="dl-hint">Downloads follow the selected UDA, ULB, designation, range and search filters. “All Pending” follows the current stage tab too (and excludes Approved / Rejected / Closed unless that tab is selected).</div>
   </div>
 
   <div class="charts-row">
@@ -224,13 +226,13 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
   <div class="tbl-outer">
     <div class="tbl-top"><h3 id="tbl-title">All Pending Applications</h3><span id="result-count">—</span></div>
     <div class="tbl-scroll">
-      <table>
+      <table id="main-tbl">
         <thead><tr>
           <th onclick="tblSort('sno')">S.No</th><th>Application Number</th><th>Submitted Date</th><th>Owner Name</th>
-          <th>ULB</th><th>UDA Authority</th><th>LTP Name</th><th>Assigned To</th>
-          <th onclick="tblSort('date')">Assigned Date</th>
-          <th onclick="tblSort('days')">Days Pending ↓</th>
-          <th>Stage</th><th>Task / Designation</th>
+          <th>ULB</th><th>UDA Authority</th><th>LTP Name</th><th class="hx">Assigned To</th><th class="hx">Designation &amp; Task Name</th>
+          <th class="hx" onclick="tblSort('date')">Assigned Date</th>
+          <th class="hx" onclick="tblSort('days')">Days Pending ↓</th>
+          <th>Stage/Status</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -284,11 +286,106 @@ function stageOf(task){
   if(t0.startsWith('rejected')) return 'REJECTED';
   if(t0.startsWith('closed')) return 'CLOSED';
   if(task.startsWith('ULB_')) return 'ULB';
-  if(task.startsWith('UDA_')||task.startsWith('Metro')||task.startsWith('APCRDA_')||task.startsWith('CRDA_')) return 'UDA';
+  if(task.startsWith('UDA_')||task.startsWith('UDA-')||task.startsWith('Metro')||task.startsWith('APCRDA_')||task.startsWith('CRDA_')) return 'UDA';
   if(task.startsWith('DTCP_')) return 'DTCP';
   if(task.startsWith('GOVT_')) return 'GOVT';
   if(task.includes('Shortfall')||task.includes('Payment Process')) return 'LTP';
   return 'OTHER';
+}
+// Stage/Status shown to the user: the workflow stage for pending files, or Approved / Rejected / Closed
+// Exact task names for each Stage/Status (matched ignoring case and extra spaces)
+const normTask=t=>String(t||'').toLowerCase().replace(/[\u2013\u2014]/g,'-').replace(/\s+/g,' ').trim();
+const STAGE_TASKS={
+ "Initial Stage": [
+  "ULB_TPBO-1 Initial Scrutiny",
+  "ULB_TPS-1 Initial Scrutiny",
+  "ULB_TPO-1 Initial Scrutiny",
+  "ULB_ACP-1 Initial Scrutiny",
+  "ULB_DCP-1 Verify Proposal",
+  "ULB_CP-1 Verify Proposal",
+  "ULB_CCP-1 Verify Proposal",
+  "ULB_COM-1 Review And Recommend",
+  "UDA_BI-2 Initial Scrutiny",
+  "UDA_WPRS-1 Initial Scrutiny",
+  "UDA_ADM-1 Initial Scrutiny",
+  "UDA_TPO-1 Technical Review",
+  "UDA_SCD-1 Initial Scrutiny",
+  "UDA_JPO-1 Technical Review",
+  "UDA_TPA-1 Technical Review",
+  "UDA_APO-1 Technical Review",
+  "UDA_ZAD-1 Technical Review",
+  "UDA_ZDD-1 Verify Proposal",
+  "UDA_PO-1 Technical Review",
+  "UDA_ZJD-1 Verify Proposal",
+  "UDA_AD-1 Verify Proposal",
+  "UDA_CPO-1 Technical Review",
+  "UDA_CUP-1 Final Review",
+  "UDA_DIR-1 Final Review",
+  "UDA_MCVC-1 Review And Recommend",
+  "DTCP_TPA-1 Initial Scrutiny",
+  "DTCP_ASD-1 Initial Scrutiny",
+  "DTCP_DD-1 Verify Proposal",
+  "DTCP_AD-1 Verify Proposal",
+  "DTCP_DIR-1 Final Review",
+  "GOVT_OSD-1 Forward Proposal",
+  "GOVT_ASO-1 Review Proposal",
+  "GOVT_SO-1 Review Proposal",
+  "GOVT_DD-1 Review Proposal",
+  "GOVT_OSD-2 Forward Proposal",
+  "GOVT_PS-1 Approve For Committee",
+  "GOVT_ASO-2 Upload Committee Remarks",
+  "GOVT_SO-2 Review Committee Remarks",
+  "GOVT_DD-2 Review Committee Remarks",
+  "GOVT_OSD-3 Forward Proposal",
+  "GOVT_PS-2 Action On Proposal",
+  "GOVT_ASO-3 Review Generated Draft Letters",
+  "GOVT_SO-3 Review Generated Draft Letter",
+  "GOVT_DD-3 Review Generated Draft Letter",
+  "GOVT_OSD-4 Forward Proposal",
+  "GOVT_PS-3 Release Order",
+  "UDA-Director Review Endorsement Letter And Fees",
+  "Metro Com/Com/VC-UDA Approve Endorsement"
+ ],
+ "Paper Publication / Objections Stage": [
+  "UDA_ADM Upload Paper Publications And Objections",
+  "UDA_JPO Review And Recommend",
+  "UDA_TPO Review And Recommend",
+  "UDA_TPA Review And Recommend",
+  "UDA_SCD Upload Paper Publications And Objections"
+ ],
+ "Final Stage": [
+  "UDA_APO Review And Recommend",
+  "UDA_ZDD Review And Recommend",
+  "UDA_ZAD Review And Recommend",
+  "UDA_PO Review And Recommend",
+  "UDA_CUP Review And Recommend",
+  "UDA_ZJD Review And Recommend",
+  "UDA_CPO Review And Recommend",
+  "UDA_AD Review And Recommend",
+  "UDA_DIR-2 Review And Recommend",
+  "UDA_MCVC-2 Recommend And Forward To DTCP_GOVT",
+  "DTCP_TPA Review And Recommend",
+  "DTCP_ASD Review And Recommend",
+  "DTCP_DD Review And Recommend",
+  "DTCP_AD Review And Recommend",
+  "DTCP_DIR Forward To GOVT",
+  "GOVT_OSD-5 Forward Proposal",
+  "GOVT_ASO-4 Prepare And Upload Draft GO",
+  "GOVT_SO-4 Review And Upload Draft GO",
+  "GOVT_DD-4 Review And Upload Draft GO",
+  "GOVT_OSD-6 Review And Upload Draft GO",
+  "GOVT_PS-4 Approve / Release Final G.O"
+ ],
+ "Final Payment Process": [
+  "Payment Process-User - Pay Fees"
+ ]
+};
+const STAGE_MAP=new Map();
+Object.entries(STAGE_TASKS).forEach(([st,list])=>list.forEach(t=>STAGE_MAP.set(normTask(t),st)));
+function stageStatus(r){
+  if(FINAL.includes(r._cat)) return CAT_LABELS[r._cat];
+  const t=normTask(r['Designation & Task Name']);
+  return STAGE_MAP.get(t)||(t.includes('shortfall')?'Shortfall':'');
 }
 function processRows(rows){
   const now=dateOnly(new Date());
@@ -336,11 +433,12 @@ function tryCache(reason){
 // ── FILTERING ──
 const val=id=>$(id).value;
 function matchRow(r,stage){
-  const q=val('search-input').toLowerCase(), uda=val('uda-filter'), ulb=val('ulb-filter'), days=val('days-filter');
+  const q=val('search-input').toLowerCase(), uda=val('uda-filter'), ulb=val('ulb-filter'), desig=val('desig-filter'), days=val('days-filter');
   if(q&&![r['Application Number'],r['Owner Name'],r['UDA Name'],r['ULB Name'],r['LTP Name'],r['Assigned To'],r['Designation & Task Name']].some(v=>v&&String(v).toLowerCase().includes(q))) return false;
   if(stage&&r._cat!==stage) return false;
   if(uda&&r['UDA Name']!==uda) return false;
   if(ulb&&r['ULB Name']!==ulb) return false;
+  if(desig&&desigOf(r)!==desig) return false;
   if(days){const[lo,hi]=days.split('-').map(Number); if(r._days<lo||r._days>hi) return false;}
   return true;
 }
@@ -363,6 +461,7 @@ function initDropdowns(){
   fillSel('uda-filter',uniq(base,'UDA Name'),abbrevUDA);
   const uda=val('uda-filter');
   fillSel('ulb-filter',uniq(base.filter(r=>!uda||r['UDA Name']===uda),'ULB Name'),x=>x);
+  fillSel('desig-filter',[...new Set(base.map(desigOf))].sort(),x=>x);
 }
 function fillSel(id,vals,fn){
   const sel=$(id),cur=sel.value;
@@ -377,7 +476,7 @@ function applyFilters(){
 }
 function setStage(v){$('stage-filter').value=v;applyFilters();}
 function resetFilters(){
-  ['stage-filter','uda-filter','ulb-filter','days-filter'].forEach(id=>$(id).value='');
+  ['stage-filter','uda-filter','ulb-filter','desig-filter','days-filter'].forEach(id=>$(id).value='');
   $('search-input').value=''; $('sort-select').value='days-desc'; applyFilters();
 }
 function tblSort(f){
@@ -385,7 +484,7 @@ function tblSort(f){
   s.value=f==='days'?(s.value==='days-desc'?'days-asc':'days-desc'):f==='date'?(s.value==='date-asc'?'date-desc':'date-asc'):'sno-asc';
   applyFilters();
 }
-['stage-filter','uda-filter','ulb-filter','days-filter','sort-select'].forEach(id=>$(id).addEventListener('change',applyFilters));
+['stage-filter','uda-filter','ulb-filter','desig-filter','days-filter','sort-select'].forEach(id=>$(id).addEventListener('change',applyFilters));
 $('search-input').addEventListener('input',debounce(applyFilters,220));
 function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 
@@ -401,12 +500,13 @@ function renderKPIs(){
   document.querySelectorAll('.kpi').forEach(el=>el.classList.toggle('active',el.getAttribute('onclick')===`setStage('${sv}')`));
 }
 function renderPills(){
-  const q=val('search-input'),stage=val('stage-filter'),uda=val('uda-filter'),ulb=val('ulb-filter'),days=val('days-filter');
+  const q=val('search-input'),stage=val('stage-filter'),uda=val('uda-filter'),ulb=val('ulb-filter'),desig=val('desig-filter'),days=val('days-filter');
   const pills=[];
   if(q)pills.push({l:'🔍 '+q,c:()=>{$('search-input').value='';applyFilters();}});
   if(stage)pills.push({l:CAT_LABELS[stage],c:()=>setStage('')});
   if(uda)pills.push({l:'🏢 '+abbrevUDA(uda),c:()=>{$('uda-filter').value='';applyFilters();}});
   if(ulb)pills.push({l:'🏙️ '+ulb,c:()=>{$('ulb-filter').value='';applyFilters();}});
+  if(desig)pills.push({l:'👤 '+desig,c:()=>{$('desig-filter').value='';applyFilters();}});
   if(days)pills.push({l:'📅 '+days.replace('-99999','+').replace('-',' – ')+' days',c:()=>{$('days-filter').value='';applyFilters();}});
   $('pills').innerHTML=pills.map((p,i)=>`<div class="pill">${p.l}<button onclick="_pc(${i})">✕</button></div>`).join('');
   window._pc=i=>pills[i].c();
@@ -416,22 +516,22 @@ function renderPills(){
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function renderTable(){
   const stage=val('stage-filter');
+  $('main-tbl').classList.toggle('fin-view',FINAL.includes(stage));
   $('tbl-title').textContent=stage?CAT_LABELS[stage]+' – Applications':'All Applications';
   const start=(currentPage-1)*PAGE_SIZE,page=filtered.slice(start,start+PAGE_SIZE);
   $('result-count').textContent=filtered.length?`Showing ${start+1}–${Math.min(start+PAGE_SIZE,filtered.length)} of ${filtered.length} records`:'No records found';
-  const cell=(v,w)=>`<td style="font-size:11px;max-width:${w}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(v)}">${esc(v)||'—'}</td>`;
+  const cell=(v,w,c)=>`<td${c?` class="${c}"`:''} style="font-size:11px;max-width:${w}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(v)}">${esc(v)||'—'}</td>`;
   $('tbody').innerHTML=page.map(r=>{
     const d=r._days,dc=d<=30?'d0':d<=60?'d1':d<=90?'d2':d<=180?'d3':'d4';
-    const an=r['Application Number']||'—',task=r['Designation & Task Name']||'—';
+    const fin=FINAL.includes(r._cat),an=r['Application Number']||'—',task=r['Designation & Task Name']||'—';
     return `<tr>
       <td class="mono">${esc(r['S.no'])}</td>
       <td class="mono" title="${esc(an)}">${esc(an.length>34?an.slice(0,34)+'…':an)}</td>
       <td style="white-space:nowrap;font-size:11px">${esc(r._submit)||'—'}</td>
-      ${cell(r['Owner Name'],140)}${cell(r['ULB Name'],120)}${cell(abbrevUDA(r['UDA Name']),140)}${cell(r['LTP Name'],120)}${cell(r['Assigned To'],130)}
-      <td style="white-space:nowrap;font-size:11px">${esc(r._assigned)||'—'}</td>
-      <td style="text-align:center">${FINAL.includes(r._cat)?'—':`<span class="${dc}">${d}</span>`}</td>
-      <td><span class="cb cb-${r._cat}">${r._cat}</span></td>
-      ${cell(task,160)}
+      ${cell(r['Owner Name'],140)}${cell(r['ULB Name'],120)}${cell(abbrevUDA(r['UDA Name']),140)}${cell(r['LTP Name'],120)}${fin?'<td class="hx"></td>':cell(r['Assigned To'],130,'hx')}${fin?'<td class="hx"></td>':cell(task,160,'hx')}
+      <td class="hx" style="white-space:nowrap;font-size:11px">${fin?'':(esc(r._assigned)||'—')}</td>
+      <td class="hx" style="text-align:center">${fin?'':`<span class="${dc}">${d}</span>`}</td>
+      <td><span class="cb cb-${r._cat}">${esc(stageStatus(r))||'—'}</span></td>
     </tr>`;
   }).join('');
   const tp=Math.ceil(filtered.length/PAGE_SIZE)||1;
@@ -502,16 +602,19 @@ function updateCharts(){
 
 // ── DOWNLOAD (CSV / Excel / PDF) ──
 const SN={ULB:'Pending with ULB',UDA:'Pending with UDA',DTCP:'Pending with DTCP',GOVT:'Pending with GOVT',LTP:'Pending with LTP (Shortfall/Payment)',APPROVED:'Approved',REJECTED:'Rejected',CLOSED:'Closed'};
+const isFin=r=>FINAL.includes(r._cat);
+const HIDE_FINAL=['Assigned To','Designation & Task Name','Assigned Date','Days Pending'];
 const COLS=[
   ['S.No',r=>r['S.no']],['Application Number',r=>r['Application Number']],['CLU Proposal Details',r=>r['CLU Proposal Details']],
   ['Owner Name',r=>r['Owner Name']],['Owner Mobile',r=>r['Owner Mobile Number']],['ULB Name',r=>r['ULB Name']],['UDA Name',r=>r['UDA Name']],
   ['LTP Name',r=>r['LTP Name']],['LTP Mobile',r=>r['LTP Mobile Number']],['Submitted Date',r=>r._submit],
-  ['Assigned To',r=>r['Assigned To']],['Assigned Date',r=>r._assigned],['Days Pending',r=>FINAL.includes(r._cat)?'':r._days],
-  ['Pending Stage',r=>SN[r._cat]||r._cat],['Designation & Task Name',r=>r['Designation & Task Name']]
+  ['Assigned To',r=>isFin(r)?'':r['Assigned To']],['Designation & Task Name',r=>isFin(r)?'':r['Designation & Task Name']],['Assigned Date',r=>isFin(r)?'':r._assigned],['Days Pending',r=>isFin(r)?'':r._days],
+  ['Stage/Status',r=>stageStatus(r)]
 ];
-const PDF_COLS=['S.No','Application Number','CLU Proposal Details','Owner Name','ULB Name','UDA Name','LTP Name','Submitted Date','Assigned To','Assigned Date','Days Pending','Designation & Task Name'];
+const PDF_COLS=['S.No','Application Number','CLU Proposal Details','Owner Name','ULB Name','UDA Name','LTP Name','Submitted Date','Assigned To','Designation & Task Name','Assigned Date','Days Pending'];
 // column widths (pt) for the PDF report, same order as PDF_COLS; total fits A4 landscape
-const PDF_W=[24,105,120,80,60,65,65,45,55,45,32,75];
+const PDF_COLS_FINAL=['S.No','Application Number','CLU Proposal Details','Owner Name','ULB Name','UDA Name','LTP Name','Submitted Date','Stage/Status'];
+const PDF_WIDTH={'S.No':24,'Application Number':105,'CLU Proposal Details':120,'Owner Name':80,'ULB Name':60,'UDA Name':65,'LTP Name':65,'Submitted Date':45,'Assigned To':55,'Designation & Task Name':75,'Assigned Date':45,'Days Pending':32,'Stage/Status':80};
 // Stage buttons keep the UDA / ULB / range / search filters; "ALL" keeps the current stage tab too
 // "ALL" with no stage tab selected exports pending files only
 function exportRows(cat){
@@ -524,7 +627,10 @@ function download(cat){
   const fmt=val('fmt'),stamp=new Date().toISOString().slice(0,10);
   const label=cat==='ALL'?(val('stage-filter')||'ALL'):cat;
   const name=`CLU_Pendency_${label}_${stamp}`;
-  const head=COLS.map(c=>c[0]),body=rows.map(r=>COLS.map(c=>c[1](r)==null?'':c[1](r)));
+  // Approved / Rejected / Closed downloads drop the assignment columns and keep Stage/Status
+  const finalView=FINAL.includes(cat)||(cat==='ALL'&&FINAL.includes(val('stage-filter')));
+  const cols=finalView?COLS.filter(c=>!HIDE_FINAL.includes(c[0])):COLS;
+  const head=cols.map(c=>c[0]),body=rows.map(r=>cols.map(c=>c[1](r)==null?'':c[1](r)));
   if(fmt==='xlsx'){
     if(!window.XLSX){alert('Excel library failed to load. Check your internet connection.');return;}
     const ws=XLSX.utils.aoa_to_sheet([head,...body]);
@@ -534,15 +640,16 @@ function download(cat){
   }else if(fmt==='pdf'){
     if(!window.jspdf){alert('PDF library failed to load. Check your internet connection.');return;}
     const doc=new jspdf.jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
-    const idx=PDF_COLS.map(n=>head.indexOf(n));
+    const idx=(finalView?PDF_COLS_FINAL:PDF_COLS).map(n=>head.indexOf(n));
     doc.setFontSize(13);doc.text('CLU Pendency Report – '+(SN[label]||'All Pending Applications'),30,32);
     const f=[];
     if(val('uda-filter'))f.push('UDA: '+val('uda-filter'));
     if(val('ulb-filter'))f.push('ULB: '+val('ulb-filter'));
+    if(val('desig-filter'))f.push('Designation: '+val('desig-filter'));
     if(val('days-filter'))f.push('Range: '+val('days-filter').replace('-99999','+')+' days');
     if(val('search-input'))f.push('Search: '+val('search-input'));
     doc.setFontSize(9);doc.text(`Generated ${new Date().toLocaleString('en-IN')}  |  ${rows.length} records${f.length?'  |  '+f.join('  |  '):''}`,30,48);
-    doc.autoTable({head:[idx.map(i=>head[i])],body:body.map(b=>idx.map(i=>String(b[i]))),startY:58,styles:{fontSize:7,cellPadding:3,overflow:'linebreak',valign:'top'},headStyles:{fillColor:[26,58,107]},columnStyles:Object.fromEntries(PDF_W.map((w,i)=>[i,{cellWidth:w}])),margin:{left:30,right:30}});
+    doc.autoTable({head:[idx.map(i=>head[i])],body:body.map(b=>idx.map(i=>String(b[i]))),startY:58,styles:{fontSize:7,cellPadding:3,overflow:'linebreak',valign:'top'},headStyles:{fillColor:[26,58,107]},columnStyles:Object.fromEntries(idx.map((hi,i)=>[i,{cellWidth:PDF_WIDTH[head[hi]]||60}])),margin:{left:30,right:30}});
     doc.save(name+'.pdf');
   }else{
     const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
