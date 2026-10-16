@@ -163,7 +163,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
 
 <div class="filters-bar">
   <div class="fg"><label>🔍 Search</label><input type="text" id="search-input" placeholder="App no / owner / ULB / LTP…" style="min-width:210px"></div>
-  <div class="fg"><label>Pending Stage</label>
+  <div class="fg"><label>Pending With</label>
     <select id="stage-filter">
       <option value="">All Stages</option><option value="ULB">Pending with ULB</option><option value="UDA">Pending with UDA</option>
       <option value="DTCP">Pending with DTCP</option><option value="GOVT">Pending with GOVT</option><option value="LTP">Pending with LTP</option>
@@ -172,6 +172,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
   <div class="fg"><label>UDA Authority</label><select id="uda-filter"><option value="">All UDAs</option></select></div>
   <div class="fg"><label>ULB</label><select id="ulb-filter"><option value="">All ULBs</option></select></div>
   <div class="fg"><label>Designation</label><select id="desig-filter"><option value="">All Designations</option></select></div>
+  <div class="fg"><label>Stage / Status</label><select id="status-filter"><option value="">All</option><option value="Initial Stage">Initial Stage</option><option value="Paper Publication / Objections Stage">Paper Publication / Objections</option><option value="Final Stage">Final Stage</option><option value="Final Payment Process">Final Payment Process</option><option value="Shortfall">Shortfall</option></select></div>
   <div class="fg"><label>Pendency Range</label>
     <select id="days-filter">
       <option value="">All</option><option value="0-30">0–30 days</option><option value="31-60">31–60 days</option>
@@ -211,7 +212,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
     <button class="dl-btn" style="background:#047857" onclick="download('APPROVED')">✅ Approved</button>
     <button class="dl-btn" style="background:#b91c1c" onclick="download('REJECTED')">❌ Rejected</button>
     <button class="dl-btn" style="background:#374151" onclick="download('CLOSED')">📁 Closed</button>
-    <div class="dl-hint">Downloads follow the selected UDA, ULB, designation, range and search filters. “All Pending” follows the current stage tab too (and excludes Approved / Rejected / Closed unless that tab is selected).</div>
+    <div class="dl-hint">Downloads follow the selected UDA, ULB, designation, stage/status, range and search filters. “All Pending” follows the current stage tab too (and excludes Approved / Rejected / Closed unless that tab is selected).</div>
   </div>
 
   <div class="charts-row">
@@ -297,6 +298,7 @@ function stageOf(task){
 const normTask=t=>String(t||'').toLowerCase().replace(/[\u2013\u2014]/g,'-').replace(/\s+/g,' ').trim();
 const STAGE_TASKS={
  "Initial Stage": [
+  "ULB_WPRS-1 Initial Scrutiny",
   "ULB_TPBO-1 Initial Scrutiny",
   "ULB_TPS-1 Initial Scrutiny",
   "ULB_TPO-1 Initial Scrutiny",
@@ -433,12 +435,13 @@ function tryCache(reason){
 // ── FILTERING ──
 const val=id=>$(id).value;
 function matchRow(r,stage){
-  const q=val('search-input').toLowerCase(), uda=val('uda-filter'), ulb=val('ulb-filter'), desig=val('desig-filter'), days=val('days-filter');
+  const q=val('search-input').toLowerCase(), uda=val('uda-filter'), ulb=val('ulb-filter'), desig=val('desig-filter'), status=val('status-filter'), days=val('days-filter');
   if(q&&![r['Application Number'],r['Owner Name'],r['UDA Name'],r['ULB Name'],r['LTP Name'],r['Assigned To'],r['Designation & Task Name']].some(v=>v&&String(v).toLowerCase().includes(q))) return false;
   if(stage&&r._cat!==stage) return false;
   if(uda&&r['UDA Name']!==uda) return false;
   if(ulb&&r['ULB Name']!==ulb) return false;
   if(desig&&desigOf(r)!==desig) return false;
+  if(status&&stageStatus(r)!==status) return false;
   if(days){const[lo,hi]=days.split('-').map(Number); if(r._days<lo||r._days>hi) return false;}
   return true;
 }
@@ -476,7 +479,7 @@ function applyFilters(){
 }
 function setStage(v){$('stage-filter').value=v;applyFilters();}
 function resetFilters(){
-  ['stage-filter','uda-filter','ulb-filter','desig-filter','days-filter'].forEach(id=>$(id).value='');
+  ['stage-filter','uda-filter','ulb-filter','desig-filter','status-filter','days-filter'].forEach(id=>$(id).value='');
   $('search-input').value=''; $('sort-select').value='days-desc'; applyFilters();
 }
 function tblSort(f){
@@ -484,7 +487,7 @@ function tblSort(f){
   s.value=f==='days'?(s.value==='days-desc'?'days-asc':'days-desc'):f==='date'?(s.value==='date-asc'?'date-desc':'date-asc'):'sno-asc';
   applyFilters();
 }
-['stage-filter','uda-filter','ulb-filter','desig-filter','days-filter','sort-select'].forEach(id=>$(id).addEventListener('change',applyFilters));
+['stage-filter','uda-filter','ulb-filter','desig-filter','status-filter','days-filter','sort-select'].forEach(id=>$(id).addEventListener('change',applyFilters));
 $('search-input').addEventListener('input',debounce(applyFilters,220));
 function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 
@@ -500,13 +503,14 @@ function renderKPIs(){
   document.querySelectorAll('.kpi').forEach(el=>el.classList.toggle('active',el.getAttribute('onclick')===`setStage('${sv}')`));
 }
 function renderPills(){
-  const q=val('search-input'),stage=val('stage-filter'),uda=val('uda-filter'),ulb=val('ulb-filter'),desig=val('desig-filter'),days=val('days-filter');
+  const q=val('search-input'),stage=val('stage-filter'),uda=val('uda-filter'),ulb=val('ulb-filter'),desig=val('desig-filter'),status=val('status-filter'),days=val('days-filter');
   const pills=[];
   if(q)pills.push({l:'🔍 '+q,c:()=>{$('search-input').value='';applyFilters();}});
   if(stage)pills.push({l:CAT_LABELS[stage],c:()=>setStage('')});
   if(uda)pills.push({l:'🏢 '+abbrevUDA(uda),c:()=>{$('uda-filter').value='';applyFilters();}});
   if(ulb)pills.push({l:'🏙️ '+ulb,c:()=>{$('ulb-filter').value='';applyFilters();}});
   if(desig)pills.push({l:'👤 '+desig,c:()=>{$('desig-filter').value='';applyFilters();}});
+  if(status)pills.push({l:'🔖 '+status,c:()=>{$('status-filter').value='';applyFilters();}});
   if(days)pills.push({l:'📅 '+days.replace('-99999','+').replace('-',' – ')+' days',c:()=>{$('days-filter').value='';applyFilters();}});
   $('pills').innerHTML=pills.map((p,i)=>`<div class="pill">${p.l}<button onclick="_pc(${i})">✕</button></div>`).join('');
   window._pc=i=>pills[i].c();
@@ -646,6 +650,7 @@ function download(cat){
     if(val('uda-filter'))f.push('UDA: '+val('uda-filter'));
     if(val('ulb-filter'))f.push('ULB: '+val('ulb-filter'));
     if(val('desig-filter'))f.push('Designation: '+val('desig-filter'));
+    if(val('status-filter'))f.push('Stage/Status: '+val('status-filter'));
     if(val('days-filter'))f.push('Range: '+val('days-filter').replace('-99999','+')+' days');
     if(val('search-input'))f.push('Search: '+val('search-input'));
     doc.setFontSize(9);doc.text(`Generated ${new Date().toLocaleString('en-IN')}  |  ${rows.length} records${f.length?'  |  '+f.join('  |  '):''}`,30,48);
