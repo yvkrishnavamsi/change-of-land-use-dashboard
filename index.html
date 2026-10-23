@@ -189,7 +189,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
 <main>
   <div class="pills" id="pills"></div>
   <div class="kpi-row">
-    <div class="kpi" style="--cc:#1a3a6b" onclick="setStage('')"><div class="kpi-label">Total Submitted / Received</div><div class="kpi-val" id="k-total">—</div><div class="kpi-sub">All stages combined</div><div class="kpi-icon">📋</div></div>
+    <div class="kpi" style="--cc:#1a3a6b" onclick="setStage('')"><div class="kpi-label">Total Received / Pending</div><div class="kpi-val" id="k-total">—</div><div class="kpi-sub">All stages combined</div><div class="kpi-icon">📋</div></div>
     <div class="kpi" style="--cc:#1a5abf" onclick="setStage('ULB')"><div class="kpi-label">Pending with ULB</div><div class="kpi-val" id="k-ulb">—</div><div class="kpi-sub">Urban Local Body</div><div class="kpi-icon">🏙️</div></div>
     <div class="kpi" style="--cc:#6c3d9e" onclick="setStage('UDA')"><div class="kpi-label">Pending with UDA</div><div class="kpi-val" id="k-uda">—</div><div class="kpi-sub">UDAs incl. APCRDA</div><div class="kpi-icon">🏢</div></div>
     <div class="kpi" style="--cc:#d4840a" onclick="setStage('DTCP')"><div class="kpi-label">Pending with DTCP</div><div class="kpi-val" id="k-dtcp">—</div><div class="kpi-sub">Town &amp; Country Planning</div><div class="kpi-icon">📐</div></div>
@@ -299,6 +299,7 @@ const normTask=t=>String(t||'').toLowerCase().replace(/[\u2013\u2014]/g,'-').rep
 const STAGE_TASKS={
  "Initial Stage": [
   "ULB_WPRS-1 Initial Scrutiny",
+  "UDA_WPRS-1 Initial Scrutiny",
   "ULB_TPBO-1 Initial Scrutiny",
   "ULB_TPS-1 Initial Scrutiny",
   "ULB_TPO-1 Initial Scrutiny",
@@ -308,7 +309,6 @@ const STAGE_TASKS={
   "ULB_CCP-1 Verify Proposal",
   "ULB_COM-1 Review And Recommend",
   "UDA_BI-2 Initial Scrutiny",
-  "UDA_WPRS-1 Initial Scrutiny",
   "UDA_ADM-1 Initial Scrutiny",
   "UDA_TPO-1 Technical Review",
   "UDA_SCD-1 Initial Scrutiny",
@@ -667,6 +667,9 @@ function download(cat){
 function roleOf(r){const t=(r['Designation & Task Name']||'').trim();const p=t.split('_');return p.length>1?p[1].trim().split(/[\s\-–]/)[0]:(t||'—');}
 function roleCounts(list){const c={};list.forEach(r=>{const k=roleOf(r);c[k]=(c[k]||0)+1;});return Object.entries(c).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));}
 function withText(list){return roleCounts(list).map(([k,v])=>k+'-'+v).join(', ');}
+// e.g. "Initial Stage-4, Final Stage-1" (counts of files by Stage/Status)
+const STATUS_ORDER=['Initial Stage','Paper Publication / Objections Stage','Final Stage','Final Payment Process','Shortfall','Other'];
+function statusText(list){const c={};list.forEach(r=>{const k=stageStatus(r)||'Other';c[k]=(c[k]||0)+1;});return STATUS_ORDER.filter(k=>c[k]).map(k=>k+'-'+c[k]).join(', ');}
 function groupBy(list,key){const m={};list.forEach(r=>{const k=(r[key]||'Not specified').trim();(m[k]=m[k]||[]).push(r);});return Object.entries(m).sort((a,b)=>a[0].localeCompare(b[0]));}
 function downloadAbstract(){
   if(!ALL_DATA.length){alert('Data is not loaded yet.');return;}
@@ -687,41 +690,55 @@ function downloadAbstract(){
     {l:'Pending with ULB',n:S.ULB.length,c:'#1a5abf',bg:'#e8effb',sub:'Across '+nUlb+' ULB'+(nUlb===1?'':'s')},
     {l:'Pending with UDA',n:S.UDA.length,c:'#6c3d9e',bg:'#f1ebf8',sub:'Across '+nUda+' authorit'+(nUda===1?'y':'ies')+' (incl. APCRDA)'},
     {l:'Pending with LTP (Shortfall)',n:S.LTP.length,c:'#be185d',bg:'#fce7f3',sub:'Shortfall / Payment'},
-    {l:'Pending with DT&CP Staff',n:S.DTCP.length,c:'#d4840a',bg:'#fdf3e0',sub:''},
-    {l:'Pending with GOVT',n:S.GOVT.length,c:'#0e7490',bg:'#e0f4f8',sub:''}
+    {l:'Pending with DT&CP Staff',n:S.DTCP.length,c:'#d4840a',bg:'#fdf3e0',sub:'DTCP Department'},
+    {l:'Pending with GOVT',n:S.GOVT.length,c:'#0e7490',bg:'#e0f4f8',sub:'MA&UD Department'}
   ];
   const gap=8,bw=(W-2*M-5*gap)/6,by=74,bh=80;
-  boxes.forEach((b,i)=>{
-    const x=M+i*(bw+gap);doc.setFillColor(b.bg);doc.roundedRect(x,by,bw,bh,5,5,'F');
-    if(!b.w){doc.setFillColor(b.c);doc.rect(x,by+6,3.5,bh-12,'F');}
+  const drawBox=(b,i,top)=>{
+    const x=M+i*(bw+gap);doc.setFillColor(b.bg);doc.roundedRect(x,top,bw,bh,5,5,'F');
+    if(!b.w){doc.setFillColor(b.c);doc.rect(x,top+6,3.5,bh-12,'F');}
     const fg=b.w?'#ffffff':b.c;
-    doc.setTextColor(fg);doc.setFont('helvetica','bold');doc.setFontSize(8);doc.text(doc.splitTextToSize(b.l,bw-18),x+11,by+14);
-    doc.setFontSize(24);doc.text(String(b.n),x+11,by+48);
+    doc.setTextColor(fg);doc.setFont('helvetica','bold');doc.setFontSize(8);doc.text(doc.splitTextToSize(b.l,bw-18),x+11,top+14);
+    doc.setFontSize(24);doc.text(String(b.n),x+11,top+48);
     doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(b.w?'#dbe4f5':'#56627f');
-    doc.text(doc.splitTextToSize(b.sub||'',bw-18).slice(0,3),x+11,by+58);
-  });
-  let y=by+bh+20;
+    doc.text(doc.splitTextToSize(b.sub||'',bw-18).slice(0,3),x+11,top+58);
+  };
+  boxes.forEach((b,i)=>drawBox(b,i,by));
+  // second row: files that are finished
+  const cnt=k=>ALL_DATA.filter(r=>r._cat===k).length;
+  const boxes2=[
+    {l:'Approved',n:cnt('APPROVED'),c:'#047857',bg:'#e3f6ee',sub:'Files approved'},
+    {l:'Rejected',n:cnt('REJECTED'),c:'#b91c1c',bg:'#fdeaea',sub:'Files rejected'},
+    {l:'Closed',n:cnt('CLOSED'),c:'#374151',bg:'#eceef1',sub:'Files closed'}
+  ];
+  const by2=by+bh+gap;
+  boxes2.forEach((b,i)=>drawBox(b,i,by2));
+  let y=by2+bh+20;
   function section(title,color,head,body,foot,cs){
     if(y>480){doc.addPage();y=40;}
     doc.setFillColor(color);doc.rect(M,y,W-2*M,20,'F');doc.setTextColor('#ffffff');doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(title,M+8,y+13.5);
     doc.autoTable({startY:y+20,head:[head],body:body.length?body:[['','No files pending',...head.slice(2).map(()=>'')]],foot:[foot],showFoot:'lastPage',theme:'grid',
       styles:{fontSize:8.5,cellPadding:4,lineColor:'#dde3ed',lineWidth:0.5,textColor:'#1a2540',valign:'middle'},
       headStyles:{fillColor:'#eef2f9',textColor:'#1a2540',fontStyle:'bold'},footStyles:{fillColor:'#eef2f9',textColor:color,fontStyle:'bold'},
-      alternateRowStyles:{fillColor:'#fafbfd'},columnStyles:cs,margin:{left:M,right:M,bottom:40}});
+      alternateRowStyles:{fillColor:'#fafbfd'},columnStyles:cs,margin:{left:M,right:M,bottom:40},
+      didParseCell:d=>{if(d.column.index===2)d.cell.styles.halign='center';}});
     y=doc.lastAutoTable.finalY+16;
   }
   const cs4={0:{cellWidth:36,halign:'center'},1:{cellWidth:300},2:{cellWidth:70,halign:'center',fontStyle:'bold'}};
   const cs3={0:{cellWidth:36,halign:'center'},1:{cellWidth:300},2:{cellWidth:70,halign:'center',fontStyle:'bold'}};
-  const grp=(list,key,title,color,label)=>section(title+' – '+list.length,color,['S.No',label,'Files','Pending With (Designation-Files)'],
-    groupBy(list,key).map(([k,l],i)=>[i+1,k,l.length,withText(l)]),['','Total',list.length,''],cs4);
+  const cs5={0:{cellWidth:36,halign:'center'},1:{cellWidth:250},2:{cellWidth:50,halign:'center',fontStyle:'bold'}};
+  const grp=(list,key,title,color,label)=>section(title+' – '+list.length,color,['S.No',label,'Files','Pending With (Designation-Files)','Stage/Status (Files)'],
+    groupBy(list,key).map(([k,l],i)=>[i+1,k,l.length,withText(l),statusText(l)]),['','Total',list.length,'',''],cs5);
   grp(S.ULB,'ULB Name','Pending with ULB','#1a5abf','Urban Local Body (ULB)');
   grp(S.UDA,'UDA Name','Pending with UDA','#6c3d9e','Urban Development Authority (UDA)');
-  const des=(list,title,color)=>section(title+' – '+list.length,color,['S.No','Designation','Files'],
-    roleCounts(list).map(([k,v],i)=>[i+1,k,v]),['','Total',list.length],cs3);
+  const des=(list,title,color)=>section(title+' – '+list.length,color,['S.No','Designation','Files','Stage/Status (Files)'],
+    roleCounts(list).map(([k,v],i)=>[i+1,k,v,statusText(list.filter(r=>roleOf(r)===k))]),['','Total',list.length,''],cs5);
   des(S.DTCP,'Pending with DT&CP Staff','#d4840a');
   des(S.GOVT,'Pending with GOVT','#0e7490');
+  const ltpPay=S.LTP.filter(r=>stageStatus(r)==='Final Payment Process'||/payment process/i.test(r['Designation & Task Name']||''));
+  const ltpShort=S.LTP.filter(r=>!ltpPay.includes(r));
   section('Pending with LTP (Shortfall / Payment) – '+S.LTP.length,'#be185d',['S.No','Description','Files'],
-    S.LTP.length?[[1,'Applications awaiting action from the Licensed Technical Person',S.LTP.length]]:[],['','Total',S.LTP.length],cs3);
+    S.LTP.length?[[1,'Shortfall – applications awaiting action from the Licensed Technical Person',ltpShort.length],[2,'Final Payment – applications awaiting fee payment by the Licensed Technical Person',ltpPay.length]]:[],['','Total',S.LTP.length],cs3);
   const other=ALL_DATA.filter(r=>r._cat==='OTHER').length;
   if(other>0){doc.setTextColor('#56627f');doc.setFont('helvetica','italic');doc.setFontSize(8);doc.text(other+' file(s) have a task name that could not be classified into a stage.',M,y);}
   // footer
