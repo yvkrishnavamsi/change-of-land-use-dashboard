@@ -525,11 +525,11 @@ function renderTable(){
   const start=(currentPage-1)*PAGE_SIZE,page=filtered.slice(start,start+PAGE_SIZE);
   $('result-count').textContent=filtered.length?`Showing ${start+1}–${Math.min(start+PAGE_SIZE,filtered.length)} of ${filtered.length} records`:'No records found';
   const cell=(v,w,c)=>`<td${c?` class="${c}"`:''} style="font-size:11px;max-width:${w}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(v)}">${esc(v)||'—'}</td>`;
-  $('tbody').innerHTML=page.map(r=>{
+  $('tbody').innerHTML=page.map((r,i)=>{
     const d=r._days,dc=d<=30?'d0':d<=60?'d1':d<=90?'d2':d<=180?'d3':'d4';
     const fin=FINAL.includes(r._cat),an=r['Application Number']||'—',task=r['Designation & Task Name']||'—';
     return `<tr>
-      <td class="mono">${esc(r['S.no'])}</td>
+      <td class="mono">${start+i+1}</td>
       <td class="mono" title="${esc(an)}">${esc(an.length>34?an.slice(0,34)+'…':an)}</td>
       <td style="white-space:nowrap;font-size:11px">${esc(r._submit)||'—'}</td>
       ${cell(r['Owner Name'],140)}${cell(r['ULB Name'],120)}${cell(abbrevUDA(r['UDA Name']),140)}${cell(r['LTP Name'],120)}${fin?'<td class="hx"></td>':cell(r['Assigned To'],130,'hx')}${fin?'<td class="hx"></td>':cell(task,160,'hx')}
@@ -635,6 +635,7 @@ function download(cat){
   const finalView=FINAL.includes(cat)||(cat==='ALL'&&FINAL.includes(val('stage-filter')));
   const cols=finalView?COLS.filter(c=>!HIDE_FINAL.includes(c[0])):COLS;
   const head=cols.map(c=>c[0]),body=rows.map(r=>cols.map(c=>c[1](r)==null?'':c[1](r)));
+  const sIdx=head.indexOf('S.No'); if(sIdx>-1) body.forEach((b,i)=>{b[sIdx]=i+1;});
   if(fmt==='xlsx'){
     if(!window.XLSX){alert('Excel library failed to load. Check your internet connection.');return;}
     const ws=XLSX.utils.aoa_to_sheet([head,...body]);
