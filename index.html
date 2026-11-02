@@ -263,7 +263,7 @@ const $=id=>document.getElementById(id);
 async function fetchData(){
   showLoader(true,'Fetching live data from Google Sheets…'); hideNotice(); setStatus('Connecting…','#e8a020');
   try{
-    const res=await fetch(API_URL,{cache:'no-cache'});
+    const res=await fetch(API_URL+(API_URL.includes('?')?'&':'?')+'t='+Date.now());
     if(!res.ok) throw new Error('HTTP '+res.status);
     const json=await res.json();
     if(json.error) throw new Error(json.error);
