@@ -758,8 +758,6 @@ function finalDate(r){
 }
 
 // ── UI UTILS ──
-function abbrevUDA(n){...
-// ── UI UTILS ──
 function abbrevUDA(n){return(n||'').replace('Urban Development Authority','UDA').replace('Metropolitan Region Development Authority','MRDA').replace('Capital Region Development Authority','CRDA').replace('Andhra Pradesh ','AP ');}
 function showLoader(b,msg){$('loader').classList.toggle('hidden',!b);if(msg)$('loader-sub').textContent=msg;}
 function showNotice(type,title,body){const n=$('notice-box');n.className='notice show '+type;$('notice-title').innerHTML=title;$('notice-body').innerHTML=body;}
