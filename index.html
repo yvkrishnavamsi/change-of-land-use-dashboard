@@ -95,6 +95,7 @@ tbody tr:nth-child(even){background:#fafbfd}
 td{padding:8px 13px;vertical-align:middle}
 td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
 .fin-view .hx{display:none}table.fin-view{min-width:0}
+.fx{display:none}.fin-view .fx{display:table-cell}
 .cb{display:inline-block;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700}
 .cb-ULB{background:#dbeafe;color:#1a5abf}.cb-UDA{background:#ede9fe;color:#6c3d9e}.cb-DTCP{background:#fef3c7;color:#d4840a}.cb-GOVT{background:#cffafe;color:#0e7490}.cb-LTP{background:#fce7f3;color:#be185d}
 .cb-APPROVED{background:#d1fae5;color:#047857}.cb-REJECTED{background:#fee2e2;color:#b91c1c}.cb-CLOSED{background:#e5e7eb;color:#374151}
@@ -233,7 +234,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
           <th>ULB</th><th>UDA Authority</th><th>LTP Name</th><th class="hx">Assigned To</th><th class="hx">Designation &amp; Task Name</th>
           <th class="hx" onclick="tblSort('date')">Assigned Date</th>
           <th class="hx" onclick="tblSort('days')">Days Pending ↓</th>
-          <th>Stage/Status</th>
+          <th class="fx" id="th-fdate">Final Date</th><th>Stage/Status</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -521,6 +522,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;',
 function renderTable(){
   const stage=val('stage-filter');
   $('main-tbl').classList.toggle('fin-view',FINAL.includes(stage));
+  $('th-fdate').textContent=(CAT_LABELS[stage]||'')+' Date';
   $('tbl-title').textContent=stage?CAT_LABELS[stage]+' – Applications':'All Applications';
   const start=(currentPage-1)*PAGE_SIZE,page=filtered.slice(start,start+PAGE_SIZE);
   $('result-count').textContent=filtered.length?`Showing ${start+1}–${Math.min(start+PAGE_SIZE,filtered.length)} of ${filtered.length} records`:'No records found';
@@ -535,6 +537,7 @@ function renderTable(){
       ${cell(r['Owner Name'],140)}${cell(r['ULB Name'],120)}${cell(abbrevUDA(r['UDA Name']),140)}${cell(r['LTP Name'],120)}${fin?'<td class="hx"></td>':cell(r['Assigned To'],130,'hx')}${fin?'<td class="hx"></td>':cell(task,160,'hx')}
       <td class="hx" style="white-space:nowrap;font-size:11px">${fin?'':(esc(r._assigned)||'—')}</td>
       <td class="hx" style="text-align:center">${fin?'':`<span class="${dc}">${d}</span>`}</td>
+      <td class="fx" style="white-space:nowrap;font-size:11px">${fin?(esc(finalDate(r))||'—'):''}</td>
       <td><span class="cb cb-${r._cat}">${esc(stageStatus(r))||'—'}</span></td>
     </tr>`;
   }).join('');
@@ -613,7 +616,7 @@ const COLS=[
   ['Owner Name',r=>r['Owner Name']],['Owner Mobile',r=>r['Owner Mobile Number']],['ULB Name',r=>r['ULB Name']],['UDA Name',r=>r['UDA Name']],
   ['LTP Name',r=>r['LTP Name']],['LTP Mobile',r=>r['LTP Mobile Number']],['Submitted Date',r=>r._submit],
   ['Assigned To',r=>isFin(r)?'':r['Assigned To']],['Designation & Task Name',r=>isFin(r)?'':r['Designation & Task Name']],['Assigned Date',r=>isFin(r)?'':r._assigned],['Days Pending',r=>isFin(r)?'':r._days],
-  ['Stage/Status',r=>stageStatus(r)]
+  ['Final Date',r=>finalDate(r)],['Stage/Status',r=>stageStatus(r)]
 ];
 const PDF_COLS=['S.No','Application Number','CLU Proposal Details','Owner Name','ULB Name','UDA Name','LTP Name','Submitted Date','Assigned To','Designation & Task Name','Assigned Date','Days Pending'];
 // column widths (pt) for the PDF report, same order as PDF_COLS; total fits A4 landscape
@@ -633,8 +636,9 @@ function download(cat){
   const name=`CLU_Pendency_${label}_${stamp}`;
   // Approved / Rejected / Closed downloads drop the assignment columns and keep Stage/Status
   const finalView=FINAL.includes(cat)||(cat==='ALL'&&FINAL.includes(val('stage-filter')));
-  const cols=finalView?COLS.filter(c=>!HIDE_FINAL.includes(c[0])):COLS;
-  const head=cols.map(c=>c[0]),body=rows.map(r=>cols.map(c=>c[1](r)==null?'':c[1](r)));
+  const finLabel=(CAT_LABELS[cat==='ALL'?val('stage-filter'):cat]||'')+' Date';
+  const cols=finalView?COLS.filter(c=>!HIDE_FINAL.includes(c[0])):COLS.filter(c=>c[0]!=='Final Date');
+  const head=cols.map(c=>c[0]==='Final Date'?finLabel:c[0]),body=rows.map(r=>cols.map(c=>c[1](r)==null?'':c[1](r)));
   const sIdx=head.indexOf('S.No'); if(sIdx>-1) body.forEach((b,i)=>{b[sIdx]=i+1;});
   if(fmt==='xlsx'){
     if(!window.XLSX){alert('Excel library failed to load. Check your internet connection.');return;}
@@ -645,7 +649,7 @@ function download(cat){
   }else if(fmt==='pdf'){
     if(!window.jspdf){alert('PDF library failed to load. Check your internet connection.');return;}
     const doc=new jspdf.jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
-    const idx=(finalView?PDF_COLS_FINAL:PDF_COLS).map(n=>head.indexOf(n));
+    const idx=(finalView?[...PDF_COLS_FINAL.slice(0,8),finLabel,'Stage/Status']:PDF_COLS).map(n=>head.indexOf(n));
     doc.setFontSize(13);doc.text('CLU Pendency Report – '+(SN[label]||'All Pending Applications'),30,32);
     const f=[];
     if(val('uda-filter'))f.push('UDA: '+val('uda-filter'));
@@ -749,6 +753,12 @@ function downloadAbstract(){
   doc.save('CLU_Abstract_'+new Date().toISOString().slice(0,10)+'.pdf');
 }
 
+function finalDate(r){
+  return FINAL.includes(r._cat)?(r._assigned||''):'';
+}
+
+// ── UI UTILS ──
+function abbrevUDA(n){...
 // ── UI UTILS ──
 function abbrevUDA(n){return(n||'').replace('Urban Development Authority','UDA').replace('Metropolitan Region Development Authority','MRDA').replace('Capital Region Development Authority','CRDA').replace('Andhra Pradesh ','AP ');}
 function showLoader(b,msg){$('loader').classList.toggle('hidden',!b);if(msg)$('loader-sub').textContent=msg;}
