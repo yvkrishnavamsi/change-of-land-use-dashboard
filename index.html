@@ -99,6 +99,8 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
 .cb{display:inline-block;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700}
 .cb-ULB{background:#dbeafe;color:#1a5abf}.cb-UDA{background:#ede9fe;color:#6c3d9e}.cb-DTCP{background:#fef3c7;color:#d4840a}.cb-GOVT{background:#cffafe;color:#0e7490}.cb-LTP{background:#fce7f3;color:#be185d}
 .cb-APPROVED{background:#d1fae5;color:#047857}.cb-REJECTED{background:#fee2e2;color:#b91c1c}.cb-CLOSED{background:#e5e7eb;color:#374151}
+.seg{display:inline-flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden}.seg button{border:none;background:#fff;padding:8px 14px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;color:var(--muted)}.seg button.on{background:var(--ap-blue);color:#fff}
+body.suo .ltp-only,body.suo .ow{display:none!important}
 .d0{color:#1a7a4a;font-weight:700}.d1{color:#d4840a;font-weight:700}.d2{color:#c45c0a;font-weight:700}.d3{color:#c0392b;font-weight:700}
 .d4{color:#7c0a0a;font-weight:700;background:#fff0f0;border-radius:4px;padding:2px 6px}
 .pagination{display:flex;justify-content:space-between;align-items:center;padding:11px 20px;border-top:1px solid var(--border);background:#f7f9fc;flex-wrap:wrap;gap:8px}
@@ -149,7 +151,9 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
     <div><h2>Change of Land Use – Pendency Report</h2><p>Days pending are counted from the date the file was assigned to the officer</p></div>
   </div>
   <div class="app-bar-right">
-    <button class="btn btn-dark" onclick="downloadAbstract()">📑 Download Abstract</button>
+    <div class="seg"><button id="seg-clu" class="on" onclick="setDataset('CLU')">CLU Applications</button><button id="seg-suo" onclick="setDataset('SUOMOTU')">CLU Suo Motu</button></div>
+    <button class="btn btn-dark" onclick="downloadAbstract('CLU')">📑 Download Abstract</button>
+    <button class="btn btn-dark" onclick="downloadAbstract('SUOMOTU')">📑 Suo Motu Abstract</button>
     <button class="btn btn-gold" onclick="fetchData()">🔄 Refresh Now</button>
   </div>
 </div>
@@ -167,7 +171,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
   <div class="fg"><label>Pending With</label>
     <select id="stage-filter">
       <option value="">All Stages</option><option value="ULB">Pending with ULB</option><option value="UDA">Pending with UDA</option>
-      <option value="DTCP">Pending with DTCP</option><option value="GOVT">Pending with GOVT</option><option value="LTP">Pending with LTP</option>
+      <option value="DTCP">Pending with DTCP</option><option value="GOVT">Pending with GOVT</option><option value="LTP" class="ltp-only">Pending with LTP</option>
       <option value="APPROVED">Approved</option><option value="REJECTED">Rejected</option><option value="CLOSED">Closed</option>
     </select></div>
   <div class="fg"><label>UDA Authority</label><select id="uda-filter"><option value="">All UDAs</option></select></div>
@@ -195,7 +199,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
     <div class="kpi" style="--cc:#6c3d9e" onclick="setStage('UDA')"><div class="kpi-label">Pending with UDA</div><div class="kpi-val" id="k-uda">—</div><div class="kpi-sub">UDAs incl. APCRDA</div><div class="kpi-icon">🏢</div></div>
     <div class="kpi" style="--cc:#d4840a" onclick="setStage('DTCP')"><div class="kpi-label">Pending with DTCP</div><div class="kpi-val" id="k-dtcp">—</div><div class="kpi-sub">Town &amp; Country Planning</div><div class="kpi-icon">📐</div></div>
     <div class="kpi" style="--cc:#0e7490" onclick="setStage('GOVT')"><div class="kpi-label">Pending with GOVT</div><div class="kpi-val" id="k-govt">—</div><div class="kpi-sub">Government</div><div class="kpi-icon">🏛️</div></div>
-    <div class="kpi" style="--cc:#be185d" onclick="setStage('LTP')"><div class="kpi-label">Pending with LTP</div><div class="kpi-val" id="k-ltp">—</div><div class="kpi-sub">Shortfall / Payment</div><div class="kpi-icon">📄</div></div>
+    <div class="kpi ltp-only" style="--cc:#be185d" onclick="setStage('LTP')"><div class="kpi-label">Pending with LTP</div><div class="kpi-val" id="k-ltp">—</div><div class="kpi-sub">Shortfall / Payment</div><div class="kpi-icon">📄</div></div>
     <div class="kpi" style="--cc:#047857" onclick="setStage('APPROVED')"><div class="kpi-label">Approved</div><div class="kpi-val" id="k-approved">—</div><div class="kpi-sub">Files approved</div><div class="kpi-icon">✅</div></div>
     <div class="kpi" style="--cc:#b91c1c" onclick="setStage('REJECTED')"><div class="kpi-label">Rejected</div><div class="kpi-val" id="k-rejected">—</div><div class="kpi-sub">Files rejected</div><div class="kpi-icon">❌</div></div>
     <div class="kpi" style="--cc:#374151" onclick="setStage('CLOSED')"><div class="kpi-label">Closed</div><div class="kpi-val" id="k-closed">—</div><div class="kpi-sub">Files closed</div><div class="kpi-icon">📁</div></div>
@@ -209,7 +213,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
     <button class="dl-btn" style="background:#6c3d9e" onclick="download('UDA')">🏢 UDA</button>
     <button class="dl-btn" style="background:#d4840a" onclick="download('DTCP')">📐 DTCP</button>
     <button class="dl-btn" style="background:#0e7490" onclick="download('GOVT')">🏛️ GOVT</button>
-    <button class="dl-btn" style="background:#be185d" onclick="download('LTP')">📄 LTP</button>
+    <button class="dl-btn ltp-only" style="background:#be185d" onclick="download('LTP')">📄 LTP</button>
     <button class="dl-btn" style="background:#047857" onclick="download('APPROVED')">✅ Approved</button>
     <button class="dl-btn" style="background:#b91c1c" onclick="download('REJECTED')">❌ Rejected</button>
     <button class="dl-btn" style="background:#374151" onclick="download('CLOSED')">📁 Closed</button>
@@ -230,8 +234,8 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
     <div class="tbl-scroll">
       <table id="main-tbl">
         <thead><tr>
-          <th onclick="tblSort('sno')">S.No</th><th>Application Number</th><th>Submitted Date</th><th>Owner Name</th>
-          <th>ULB</th><th>UDA Authority</th><th>LTP Name</th><th class="hx">Assigned To</th><th class="hx">Designation &amp; Task Name</th>
+          <th onclick="tblSort('sno')">S.No</th><th>Application Number</th><th>Submitted Date</th><th class="ow">Owner Name</th>
+          <th>ULB</th><th>UDA Authority</th><th class="ow">LTP Name</th><th class="hx">Assigned To</th><th class="hx">Designation &amp; Task Name</th>
           <th class="hx" onclick="tblSort('date')">Assigned Date</th>
           <th class="hx" onclick="tblSort('days')">Days Pending ↓</th>
           <th class="fx" id="th-fdate">Final Date</th><th>Stage/Status</th>
@@ -259,6 +263,8 @@ const isPending=r=>!FINAL.includes(r._cat);
 let ALL_DATA=[], filtered=[], currentPage=1, charts={};
 const PAGE_SIZE=20;
 const $=id=>document.getElementById(id);
+let DATASET='CLU';
+function setDataset(d){DATASET=d;$('seg-clu').classList.toggle('on',d==='CLU');$('seg-suo').classList.toggle('on',d==='SUOMOTU');document.body.classList.toggle('suo',d==='SUOMOTU');resetFilters();}
 
 // ── FETCH ──
 async function fetchData(){
@@ -393,7 +399,11 @@ function stageStatus(r){
 function processRows(rows){
   const now=dateOnly(new Date());
   return rows.filter(r=>r['Application Number']||r['S.no']).map(r=>{
+    if(!r['Designation & Task Name']&&r['Task Name'])r['Designation & Task Name']=r['Task Name'];
+    r._suo=r._src==='SUOMOTU'||/^CLUSUOMOTU/i.test(r['Application Number']||'');
     r._cat=stageOf((r['Designation & Task Name']||'').trim());
+    const _as=String(r['Application Status']||'').trim().toLowerCase();
+    if(r._suo&&/^(approved|rejected|closed)/.test(_as))r._cat=_as.startsWith('approved')?'APPROVED':_as.startsWith('rejected')?'REJECTED':'CLOSED';
     const sub=dateOnly(parseAnyDate(r['Submitted Date & Time']));
     const asg=dateOnly(parseAnyDate(r['Assigned Date & Time']));
     r._submit=sub?sub.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
@@ -436,6 +446,7 @@ function tryCache(reason){
 // ── FILTERING ──
 const val=id=>$(id).value;
 function matchRow(r,stage){
+  if(!!r._suo!==(DATASET==='SUOMOTU')) return false;
   const q=val('search-input').toLowerCase(), uda=val('uda-filter'), ulb=val('ulb-filter'), desig=val('desig-filter'), status=val('status-filter'), days=val('days-filter');
   if(q&&![r['Application Number'],r['Owner Name'],r['UDA Name'],r['ULB Name'],r['LTP Name'],r['Assigned To'],r['Designation & Task Name']].some(v=>v&&String(v).toLowerCase().includes(q))) return false;
   if(stage&&r._cat!==stage) return false;
@@ -460,7 +471,7 @@ function sortRows(list){
 // UDA and ULB lists narrow down based on the chosen stage (and UDA for ULB)
 function initDropdowns(){
   const stage=val('stage-filter');
-  const base=ALL_DATA.filter(r=>!stage||r._cat===stage);
+  const base=ALL_DATA.filter(r=>!!r._suo===(DATASET==='SUOMOTU')&&(!stage||r._cat===stage));
   const uniq=(l,k)=>[...new Set(l.map(r=>r[k]).filter(Boolean))].sort();
   fillSel('uda-filter',uniq(base,'UDA Name'),abbrevUDA);
   const uda=val('uda-filter');
@@ -497,7 +508,7 @@ function renderKPIs(){
   $('k-total').textContent=filtered.length;
   // stage cards respect the other filters, so they always add up
   ['ULB','UDA','DTCP','GOVT','LTP','APPROVED','REJECTED','CLOSED'].forEach(c=>$('k-'+c.toLowerCase()).textContent=ALL_DATA.filter(r=>matchRow(r,c)).length);
-  const PEND=ALL_DATA.filter(isPending);
+  const PEND=ALL_DATA.filter(r=>isPending(r)&&!!r._suo===(DATASET==='SUOMOTU'));
   $('stat-crit').textContent=PEND.filter(r=>r._days>180).length;
   $('stat-avg').textContent=PEND.length?Math.round(PEND.reduce((s,r)=>s+r._days,0)/PEND.length):0;
   const sv=val('stage-filter');
@@ -523,7 +534,7 @@ function renderTable(){
   const stage=val('stage-filter');
   $('main-tbl').classList.toggle('fin-view',FINAL.includes(stage));
   $('th-fdate').textContent=(CAT_LABELS[stage]||'')+' Date';
-  $('tbl-title').textContent=stage?CAT_LABELS[stage]+' – Applications':'All Applications';
+  $('tbl-title').textContent=(DATASET==='SUOMOTU'?'CLU Suo Motu – ':'')+(stage?CAT_LABELS[stage]+' – Applications':'All Applications');
   const start=(currentPage-1)*PAGE_SIZE,page=filtered.slice(start,start+PAGE_SIZE);
   $('result-count').textContent=filtered.length?`Showing ${start+1}–${Math.min(start+PAGE_SIZE,filtered.length)} of ${filtered.length} records`:'No records found';
   const cell=(v,w,c)=>`<td${c?` class="${c}"`:''} style="font-size:11px;max-width:${w}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(v)}">${esc(v)||'—'}</td>`;
@@ -534,7 +545,7 @@ function renderTable(){
       <td class="mono">${start+i+1}</td>
       <td class="mono" title="${esc(an)}">${esc(an.length>34?an.slice(0,34)+'…':an)}</td>
       <td style="white-space:nowrap;font-size:11px">${esc(r._submit)||'—'}</td>
-      ${cell(r['Owner Name'],140)}${cell(r['ULB Name'],120)}${cell(abbrevUDA(r['UDA Name']),140)}${cell(r['LTP Name'],120)}${fin?'<td class="hx"></td>':cell(r['Assigned To'],130,'hx')}${fin?'<td class="hx"></td>':cell(task,160,'hx')}
+      ${cell(r['Owner Name'],140,'ow')}${cell(r['ULB Name'],120)}${cell(abbrevUDA(r['UDA Name']),140)}${cell(r['LTP Name'],120,'ow')}${fin?'<td class="hx"></td>':cell(r['Assigned To'],130,'hx')}${fin?'<td class="hx"></td>':cell(task,160,'hx')}
       <td class="hx" style="white-space:nowrap;font-size:11px">${fin?'':(esc(r._assigned)||'—')}</td>
       <td class="hx" style="text-align:center">${fin?'':`<span class="${dc}">${d}</span>`}</td>
       <td class="fx" style="white-space:nowrap;font-size:11px">${fin?(esc(finalDate(r))||'—'):''}</td>
@@ -558,7 +569,6 @@ const STAGE_C={ULB:'#1a5abf',UDA:'#6c3d9e',DTCP:'#d4840a',GOVT:'#0e7490',LTP:'#b
 const UDA_C=['#1a3a6b','#1a5abf','#6c3d9e','#d4840a','#1a7a4a','#c0392b','#c45c0a','#2563eb','#7c3aed','#047857','#b45309','#0e7490','#9d174d'];
 const AGE_C=['#1a7a4a','#d4840a','#c45c0a','#c0392b','#7c0a0a'];
 const STAGES=['ULB','UDA','DTCP','GOVT','LTP'];
-function getUDAData(d){const c={};d.forEach(r=>{if(r['UDA Name'])c[r['UDA Name']]=(c[r['UDA Name']]||0)+1;});const s=Object.entries(c).sort((a,b)=>b[1]-a[1]);return{labels:s.map(([k])=>abbrevUDA(k)),vals:s.map(([,v])=>v)};}
 function ageBuckets(d){d=d.filter(isPending);return[[0,30],[31,60],[61,90],[91,180],[181,99999]].map(([lo,hi])=>d.filter(r=>r._days>=lo&&r._days<=hi).length);}
 // Designation = first two parts of the task name, e.g. ULB_WPRS, ULB_TPBO, ULB_COM
 function desigOf(r){
@@ -587,7 +597,6 @@ function updateUDA(){
   if(!charts.uda)return;
   const c={};filtered.forEach(r=>{const u=r['UDA Name'];if(u)c[u]=(c[u]||0)+1;});
   const e=Object.entries(c).sort((a,b)=>b[1]-a[1]);
-  const total=e.reduce((t,x)=>t+x[1],0);
   const d=charts.uda.data;
   d.labels=e.map(x=>abbrevUDA(x[0]));d.datasets[0].data=e.map(x=>x[1]);d.datasets[0].backgroundColor=e.map((x,i)=>pieColor(i));
   $('uda-sub').textContent=e.length?`${e.length} authorit${e.length===1?'y':'ies'} · highest: ${abbrevUDA(e[0][0])}`:'No UDA files for the current filters';
@@ -613,13 +622,13 @@ const isFin=r=>FINAL.includes(r._cat);
 const HIDE_FINAL=['Assigned To','Designation & Task Name','Assigned Date','Days Pending'];
 const COLS=[
   ['S.No',r=>r['S.no']],['Application Number',r=>r['Application Number']],['CLU Proposal Details',r=>r['CLU Proposal Details']],
-  ['Owner Name',r=>r['Owner Name']],['Owner Mobile',r=>r['Owner Mobile Number']],['ULB Name',r=>r['ULB Name']],['UDA Name',r=>r['UDA Name']],
-  ['LTP Name',r=>r['LTP Name']],['LTP Mobile',r=>r['LTP Mobile Number']],['Submitted Date',r=>r._submit],
+  ['Owner Name',r=>r['Owner Name']],['ULB Name',r=>r['ULB Name']],['UDA Name',r=>r['UDA Name']],
+  ['LTP Name',r=>r['LTP Name']],['Submitted Date',r=>r._submit],
   ['Assigned To',r=>isFin(r)?'':r['Assigned To']],['Designation & Task Name',r=>isFin(r)?'':r['Designation & Task Name']],['Assigned Date',r=>isFin(r)?'':r._assigned],['Days Pending',r=>isFin(r)?'':r._days],
   ['Final Date',r=>finalDate(r)],['Stage/Status',r=>stageStatus(r)]
 ];
 const PDF_COLS=['S.No','Application Number','CLU Proposal Details','Owner Name','ULB Name','UDA Name','LTP Name','Submitted Date','Assigned To','Designation & Task Name','Assigned Date','Days Pending'];
-// column widths (pt) for the PDF report, same order as PDF_COLS; total fits A4 landscape
+// column widths (pt) for the PDF report; total fits A4 landscape
 const PDF_COLS_FINAL=['S.No','Application Number','CLU Proposal Details','Owner Name','ULB Name','UDA Name','LTP Name','Submitted Date','Stage/Status'];
 const PDF_WIDTH={'S.No':24,'Application Number':105,'CLU Proposal Details':120,'Owner Name':80,'ULB Name':60,'UDA Name':65,'LTP Name':65,'Submitted Date':45,'Assigned To':55,'Designation & Task Name':75,'Assigned Date':45,'Days Pending':32,'Stage/Status':80};
 // Stage buttons keep the UDA / ULB / range / search filters; "ALL" keeps the current stage tab too
@@ -633,11 +642,12 @@ function download(cat){
   if(!rows.length){alert('No records match the current filters.');return;}
   const fmt=val('fmt'),stamp=new Date().toISOString().slice(0,10);
   const label=cat==='ALL'?(val('stage-filter')||'ALL'):cat;
-  const name=`CLU_Pendency_${label}_${stamp}`;
+  const name=`${DATASET==='SUOMOTU'?'CLU_SuoMotu':'CLU_Pendency'}_${label}_${stamp}`;
   // Approved / Rejected / Closed downloads drop the assignment columns and keep Stage/Status
   const finalView=FINAL.includes(cat)||(cat==='ALL'&&FINAL.includes(val('stage-filter')));
   const finLabel=(CAT_LABELS[cat==='ALL'?val('stage-filter'):cat]||'')+' Date';
-  const cols=finalView?COLS.filter(c=>!HIDE_FINAL.includes(c[0])):COLS.filter(c=>c[0]!=='Final Date');
+  const NO_SUO=['Owner Name','LTP Name'];
+  const cols=(finalView?COLS.filter(c=>!HIDE_FINAL.includes(c[0])):COLS.filter(c=>c[0]!=='Final Date')).filter(c=>DATASET!=='SUOMOTU'||!NO_SUO.includes(c[0]));
   const head=cols.map(c=>c[0]==='Final Date'?finLabel:c[0]),body=rows.map(r=>cols.map(c=>c[1](r)==null?'':c[1](r)));
   const sIdx=head.indexOf('S.No'); if(sIdx>-1) body.forEach((b,i)=>{b[sIdx]=i+1;});
   if(fmt==='xlsx'){
@@ -649,8 +659,8 @@ function download(cat){
   }else if(fmt==='pdf'){
     if(!window.jspdf){alert('PDF library failed to load. Check your internet connection.');return;}
     const doc=new jspdf.jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
-    const idx=(finalView?[...PDF_COLS_FINAL.slice(0,8),finLabel,'Stage/Status']:PDF_COLS).map(n=>head.indexOf(n));
-    doc.setFontSize(13);doc.text('CLU Pendency Report – '+(SN[label]||'All Pending Applications'),30,32);
+    const idx=(finalView?[...PDF_COLS_FINAL.slice(0,8),finLabel,'Stage/Status']:PDF_COLS).map(n=>head.indexOf(n)).filter(i=>i>-1);
+    doc.setFontSize(13);doc.text((DATASET==='SUOMOTU'?'CLU Suo Motu Report – ':'CLU Pendency Report – ')+(SN[label]||'All Pending Applications'),30,32);
     const f=[];
     if(val('uda-filter'))f.push('UDA: '+val('uda-filter'));
     if(val('ulb-filter'))f.push('ULB: '+val('ulb-filter'));
@@ -676,8 +686,9 @@ function withText(list){return roleCounts(list).map(([k,v])=>k+'-'+v).join(', ')
 const STATUS_ORDER=['Initial Stage','Paper Publication / Objections Stage','Final Stage','Final Payment Process','Shortfall','Other'];
 function statusText(list){const c={};list.forEach(r=>{const k=stageStatus(r)||'Other';c[k]=(c[k]||0)+1;});return STATUS_ORDER.filter(k=>c[k]).map(k=>k+'-'+c[k]).join(', ');}
 function groupBy(list,key){const m={};list.forEach(r=>{const k=(r[key]||'Not specified').trim();(m[k]=m[k]||[]).push(r);});return Object.entries(m).sort((a,b)=>a[0].localeCompare(b[0]));}
-function downloadAbstract(){
-  if(!ALL_DATA.length){alert('Data is not loaded yet.');return;}
+function downloadAbstract(kind){const SUO=kind==='SUOMOTU';abstractFor(ALL_DATA.filter(r=>!!r._suo===SUO),SUO);}
+function abstractFor(ALL_DATA,SUO){
+  if(!ALL_DATA.length){alert(SUO?'No Suo Motu data found.':'Data is not loaded yet.');return;}
   if(!window.jspdf){alert('PDF library failed to load. Check your internet connection.');return;}
   const doc=new jspdf.jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
   const W=842,M=30,S={};STAGES.forEach(st=>S[st]=ALL_DATA.filter(r=>r._cat===st));
@@ -686,12 +697,12 @@ function downloadAbstract(){
   doc.setFillColor('#1a3a6b');doc.rect(0,0,W,56,'F');doc.setFillColor('#e8a020');doc.rect(0,56,W,3,'F');
   doc.setTextColor('#ffffff');doc.setFont('helvetica','bold');doc.setFontSize(13);
   doc.text('Government of Andhra Pradesh – Directorate of Town & Country Planning',M,24);
-  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text('Change of Land Use (CLU) Applications Dashboard – Abstract',M,42);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(SUO?'CLU Suo Motu – Abstract':'Change of Land Use (CLU) Applications Dashboard – Abstract',M,42);
   doc.setFontSize(9);doc.text('As on '+today,W-M,24,{align:'right'});
   // summary boxes
   const nUlb=new Set(S.ULB.map(r=>r['ULB Name'])).size,nUda=new Set(S.UDA.map(r=>r['UDA Name'])).size;
   const boxes=[
-    {l:'Total Applications Submitted / Received',n:ALL_DATA.length,c:'#1a3a6b',bg:'#1a3a6b',sub:'All stages combined',w:1},
+    {l:SUO?'Total Suo Motu Files':'Total Applications Submitted / Received',n:ALL_DATA.length,c:'#1a3a6b',bg:'#1a3a6b',sub:'All stages combined',w:1},
     {l:'Pending with ULB',n:S.ULB.length,c:'#1a5abf',bg:'#e8effb',sub:'Across '+nUlb+' ULB'+(nUlb===1?'':'s')},
     {l:'Pending with UDA',n:S.UDA.length,c:'#6c3d9e',bg:'#f1ebf8',sub:'Across '+nUda+' authorit'+(nUda===1?'y':'ies')+' (incl. APCRDA)'},
     {l:'Pending with LTP (Shortfall)',n:S.LTP.length,c:'#be185d',bg:'#fce7f3',sub:'Shortfall / Payment'},
@@ -708,7 +719,7 @@ function downloadAbstract(){
     doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(b.w?'#dbe4f5':'#56627f');
     doc.text(doc.splitTextToSize(b.sub||'',bw-18).slice(0,3),x+11,top+58);
   };
-  boxes.forEach((b,i)=>drawBox(b,i,by));
+  boxes.filter(b=>!(SUO&&/LTP/.test(b.l))).forEach((b,i)=>drawBox(b,i,by));
   // second row: files that are finished
   const cnt=k=>ALL_DATA.filter(r=>r._cat===k).length;
   const boxes2=[
@@ -729,7 +740,6 @@ function downloadAbstract(){
       didParseCell:d=>{if(d.column.index===2)d.cell.styles.halign='center';}});
     y=doc.lastAutoTable.finalY+16;
   }
-  const cs4={0:{cellWidth:36,halign:'center'},1:{cellWidth:300},2:{cellWidth:70,halign:'center',fontStyle:'bold'}};
   const cs3={0:{cellWidth:36,halign:'center'},1:{cellWidth:300},2:{cellWidth:70,halign:'center',fontStyle:'bold'}};
   const cs5={0:{cellWidth:36,halign:'center'},1:{cellWidth:250},2:{cellWidth:50,halign:'center',fontStyle:'bold'}};
   const grp=(list,key,title,color,label)=>section(title+' – '+list.length,color,['S.No',label,'Files','Pending With (Designation-Files)','Stage/Status (Files)'],
@@ -742,7 +752,7 @@ function downloadAbstract(){
   des(S.GOVT,'Pending with GOVT','#0e7490');
   const ltpPay=S.LTP.filter(r=>stageStatus(r)==='Final Payment Process'||/payment process/i.test(r['Designation & Task Name']||''));
   const ltpShort=S.LTP.filter(r=>!ltpPay.includes(r));
-  section('Pending with LTP (Shortfall / Payment) – '+S.LTP.length,'#be185d',['S.No','Description','Files'],
+  if(!SUO)section('Pending with LTP (Shortfall / Payment) – '+S.LTP.length,'#be185d',['S.No','Description','Files'],
     S.LTP.length?[[1,'Shortfall – applications awaiting action from the Licensed Technical Person',ltpShort.length],[2,'Final Payment – applications awaiting fee payment by the Licensed Technical Person',ltpPay.length]]:[],['','Total',S.LTP.length],cs3);
   const other=ALL_DATA.filter(r=>r._cat==='OTHER').length;
   if(other>0){doc.setTextColor('#56627f');doc.setFont('helvetica','italic');doc.setFontSize(8);doc.text(other+' file(s) have a task name that could not be classified into a stage.',M,y);}
@@ -750,7 +760,7 @@ function downloadAbstract(){
   const n=doc.getNumberOfPages();
   for(let i=1;i<=n;i++){doc.setPage(i);doc.setDrawColor('#dde3ed');doc.line(M,563,W-M,563);doc.setTextColor('#6b7a99');doc.setFont('helvetica','normal');doc.setFontSize(8);
     doc.text('CLU Pendency Dashboard · DTCP Andhra Pradesh · Generated '+new Date().toLocaleString('en-IN'),M,577);doc.text('Page '+i+' of '+n,W-M,577,{align:'right'});}
-  doc.save('CLU_Abstract_'+new Date().toISOString().slice(0,10)+'.pdf');
+  doc.save((SUO?'CLU_SuoMotu_Abstract_':'CLU_Abstract_')+new Date().toISOString().slice(0,10)+'.pdf');
 }
 
 function finalDate(r){
