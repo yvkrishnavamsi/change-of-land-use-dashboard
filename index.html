@@ -151,9 +151,9 @@ body.suo .ltp-only,body.suo .ow{display:none!important}
     <div><h2>Change of Land Use – Pendency Report</h2><p>Days pending are counted from the date the file was assigned to the officer</p></div>
   </div>
   <div class="app-bar-right">
-    <div class="seg"><button id="seg-clu" class="on" onclick="setDataset('CLU')">CLU Applications</button><button id="seg-suo" onclick="setDataset('SUOMOTU')">CLU Suo Motu</button></div>
+    <div class="seg"><button id="seg-clu" class="on" onclick="setDataset('CLU')">CLU Applications</button><button id="seg-suo" onclick="setDataset('SUOMOTU')">CLU Suo Motu</button><button id="seg-all" onclick="setDataset('ALL')">Combined</button></div>
     <button class="btn btn-dark" onclick="downloadAbstract('CLU')">📑 Download Abstract</button>
-    <button class="btn btn-dark" onclick="downloadAbstract('SUOMOTU')">📑 Suo Motu Abstract</button>
+    <button class="btn btn-dark" onclick="downloadAbstract('SUOMOTU')">📑 Suo Motu Abstract</button>     <button class="btn btn-dark" onclick="downloadAbstract('ALL')">📑 Combined Abstract</button>
     <button class="btn btn-gold" onclick="fetchData()">🔄 Refresh Now</button>
   </div>
 </div>
@@ -264,7 +264,7 @@ let ALL_DATA=[], filtered=[], currentPage=1, charts={};
 const PAGE_SIZE=20;
 const $=id=>document.getElementById(id);
 let DATASET='CLU';
-function setDataset(d){DATASET=d;$('seg-clu').classList.toggle('on',d==='CLU');$('seg-suo').classList.toggle('on',d==='SUOMOTU');document.body.classList.toggle('suo',d==='SUOMOTU');resetFilters();}
+function setDataset(d){DATASET=d;$('seg-clu').classList.toggle('on',d==='CLU');$('seg-suo').classList.toggle('on',d==='SUOMOTU');$('seg-all').classList.toggle('on',d==='ALL');document.body.classList.toggle('suo',d==='SUOMOTU');resetFilters();}
 
 // ── FETCH ──
 async function fetchData(){
@@ -446,7 +446,7 @@ function tryCache(reason){
 // ── FILTERING ──
 const val=id=>$(id).value;
 function matchRow(r,stage){
-  if(!!r._suo!==(DATASET==='SUOMOTU')) return false;
+  if(DATASET!=='ALL'&&!!r._suo!==(DATASET==='SUOMOTU')) return false;
   const q=val('search-input').toLowerCase(), uda=val('uda-filter'), ulb=val('ulb-filter'), desig=val('desig-filter'), status=val('status-filter'), days=val('days-filter');
   if(q&&![r['Application Number'],r['Owner Name'],r['UDA Name'],r['ULB Name'],r['LTP Name'],r['Assigned To'],r['Designation & Task Name']].some(v=>v&&String(v).toLowerCase().includes(q))) return false;
   if(stage&&r._cat!==stage) return false;
@@ -471,7 +471,7 @@ function sortRows(list){
 // UDA and ULB lists narrow down based on the chosen stage (and UDA for ULB)
 function initDropdowns(){
   const stage=val('stage-filter');
-  const base=ALL_DATA.filter(r=>!!r._suo===(DATASET==='SUOMOTU')&&(!stage||r._cat===stage));
+  const base=ALL_DATA.filter(r=>(DATASET==='ALL'||!!r._suo===(DATASET==='SUOMOTU'))&&(!stage||r._cat===stage));
   const uniq=(l,k)=>[...new Set(l.map(r=>r[k]).filter(Boolean))].sort();
   fillSel('uda-filter',uniq(base,'UDA Name'),abbrevUDA);
   const uda=val('uda-filter');
@@ -508,7 +508,7 @@ function renderKPIs(){
   $('k-total').textContent=filtered.length;
   // stage cards respect the other filters, so they always add up
   ['ULB','UDA','DTCP','GOVT','LTP','APPROVED','REJECTED','CLOSED'].forEach(c=>$('k-'+c.toLowerCase()).textContent=ALL_DATA.filter(r=>matchRow(r,c)).length);
-  const PEND=ALL_DATA.filter(r=>isPending(r)&&!!r._suo===(DATASET==='SUOMOTU'));
+  const PEND=ALL_DATA.filter(r=>isPending(r)&&(DATASET==='ALL'||!!r._suo===(DATASET==='SUOMOTU')));
   $('stat-crit').textContent=PEND.filter(r=>r._days>180).length;
   $('stat-avg').textContent=PEND.length?Math.round(PEND.reduce((s,r)=>s+r._days,0)/PEND.length):0;
   const sv=val('stage-filter');
@@ -534,7 +534,7 @@ function renderTable(){
   const stage=val('stage-filter');
   $('main-tbl').classList.toggle('fin-view',FINAL.includes(stage));
   $('th-fdate').textContent=(CAT_LABELS[stage]||'')+' Date';
-  $('tbl-title').textContent=(DATASET==='SUOMOTU'?'CLU Suo Motu – ':'')+(stage?CAT_LABELS[stage]+' – Applications':'All Applications');
+  $('tbl-title').textContent=(DATASET==='SUOMOTU'?'CLU Suo Motu – ':DATASET==='ALL'?'Combined (CLU + Suo Motu) – ':'')+(stage?CAT_LABELS[stage]+' – Applications':'All Applications');
   const start=(currentPage-1)*PAGE_SIZE,page=filtered.slice(start,start+PAGE_SIZE);
   $('result-count').textContent=filtered.length?`Showing ${start+1}–${Math.min(start+PAGE_SIZE,filtered.length)} of ${filtered.length} records`:'No records found';
   const cell=(v,w,c)=>`<td${c?` class="${c}"`:''} style="font-size:11px;max-width:${w}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(v)}">${esc(v)||'—'}</td>`;
@@ -621,7 +621,7 @@ const SN={ULB:'Pending with ULB',UDA:'Pending with UDA',DTCP:'Pending with DTCP'
 const isFin=r=>FINAL.includes(r._cat);
 const HIDE_FINAL=['Assigned To','Designation & Task Name','Assigned Date','Days Pending'];
 const COLS=[
-  ['S.No',r=>r['S.no']],['Application Number',r=>r['Application Number']],['CLU Proposal Details',r=>r['CLU Proposal Details']],
+  ['S.No',r=>r['S.no']],['Application Number',r=>r['Application Number']],['Type',r=>r._suo?'Suo Motu':'CLU Application'],['CLU Proposal Details',r=>r['CLU Proposal Details']],
   ['Owner Name',r=>r['Owner Name']],['ULB Name',r=>r['ULB Name']],['UDA Name',r=>r['UDA Name']],
   ['LTP Name',r=>r['LTP Name']],['Submitted Date',r=>r._submit],
   ['Assigned To',r=>isFin(r)?'':r['Assigned To']],['Designation & Task Name',r=>isFin(r)?'':r['Designation & Task Name']],['Assigned Date',r=>isFin(r)?'':r._assigned],['Days Pending',r=>isFin(r)?'':r._days],
@@ -642,12 +642,12 @@ function download(cat){
   if(!rows.length){alert('No records match the current filters.');return;}
   const fmt=val('fmt'),stamp=new Date().toISOString().slice(0,10);
   const label=cat==='ALL'?(val('stage-filter')||'ALL'):cat;
-  const name=`${DATASET==='SUOMOTU'?'CLU_SuoMotu':'CLU_Pendency'}_${label}_${stamp}`;
+  const name=`${DATASET==='SUOMOTU'?'CLU_SuoMotu':DATASET==='ALL'?'CLU_Combined':'CLU_Pendency'}_${label}_${stamp}`;
   // Approved / Rejected / Closed downloads drop the assignment columns and keep Stage/Status
   const finalView=FINAL.includes(cat)||(cat==='ALL'&&FINAL.includes(val('stage-filter')));
   const finLabel=(CAT_LABELS[cat==='ALL'?val('stage-filter'):cat]||'')+' Date';
   const NO_SUO=['Owner Name','LTP Name'];
-  const cols=(finalView?COLS.filter(c=>!HIDE_FINAL.includes(c[0])):COLS.filter(c=>c[0]!=='Final Date')).filter(c=>DATASET!=='SUOMOTU'||!NO_SUO.includes(c[0]));
+  const cols=(finalView?COLS.filter(c=>!HIDE_FINAL.includes(c[0])):COLS.filter(c=>c[0]!=='Final Date')).filter(c=>DATASET!=='SUOMOTU'||!NO_SUO.includes(c[0])).filter(c=>c[0]!=='Type'||DATASET==='ALL');
   const head=cols.map(c=>c[0]==='Final Date'?finLabel:c[0]),body=rows.map(r=>cols.map(c=>c[1](r)==null?'':c[1](r)));
   const sIdx=head.indexOf('S.No'); if(sIdx>-1) body.forEach((b,i)=>{b[sIdx]=i+1;});
   if(fmt==='xlsx'){
@@ -659,8 +659,8 @@ function download(cat){
   }else if(fmt==='pdf'){
     if(!window.jspdf){alert('PDF library failed to load. Check your internet connection.');return;}
     const doc=new jspdf.jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
-    const idx=(finalView?[...PDF_COLS_FINAL.slice(0,8),finLabel,'Stage/Status']:PDF_COLS).map(n=>head.indexOf(n)).filter(i=>i>-1);
-    doc.setFontSize(13);doc.text((DATASET==='SUOMOTU'?'CLU Suo Motu Report – ':'CLU Pendency Report – ')+(SN[label]||'All Pending Applications'),30,32);
+    const idx=(finalView?[...PDF_COLS_FINAL.slice(0,8),finLabel,'Stage/Status']:PDF_COLS).flatMap(n=>n==='Application Number'&&DATASET==='ALL'?[n,'Type']:[n]).map(n=>head.indexOf(n)).filter(i=>i>-1);
+    doc.setFontSize(13);doc.text((DATASET==='SUOMOTU'?'CLU Suo Motu Report – ':DATASET==='ALL'?'CLU Combined Report – ':'CLU Pendency Report – ')+(SN[label]||'All Pending Applications'),30,32);
     const f=[];
     if(val('uda-filter'))f.push('UDA: '+val('uda-filter'));
     if(val('ulb-filter'))f.push('ULB: '+val('ulb-filter'));
@@ -686,8 +686,8 @@ function withText(list){return roleCounts(list).map(([k,v])=>k+'-'+v).join(', ')
 const STATUS_ORDER=['Initial Stage','Paper Publication / Objections Stage','Final Stage','Final Payment Process','Shortfall','Other'];
 function statusText(list){const c={};list.forEach(r=>{const k=stageStatus(r)||'Other';c[k]=(c[k]||0)+1;});return STATUS_ORDER.filter(k=>c[k]).map(k=>k+'-'+c[k]).join(', ');}
 function groupBy(list,key){const m={};list.forEach(r=>{const k=(r[key]||'Not specified').trim();(m[k]=m[k]||[]).push(r);});return Object.entries(m).sort((a,b)=>a[0].localeCompare(b[0]));}
-function downloadAbstract(kind){const SUO=kind==='SUOMOTU';abstractFor(ALL_DATA.filter(r=>!!r._suo===SUO),SUO);}
-function abstractFor(ALL_DATA,SUO){
+function downloadAbstract(kind){const SUO=kind==='SUOMOTU';abstractFor(kind==='ALL'?ALL_DATA:ALL_DATA.filter(r=>!!r._suo===SUO),SUO,kind==='ALL');}
+function abstractFor(ALL_DATA,SUO,COMB){
   if(!ALL_DATA.length){alert(SUO?'No Suo Motu data found.':'Data is not loaded yet.');return;}
   if(!window.jspdf){alert('PDF library failed to load. Check your internet connection.');return;}
   const doc=new jspdf.jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
@@ -697,7 +697,7 @@ function abstractFor(ALL_DATA,SUO){
   doc.setFillColor('#1a3a6b');doc.rect(0,0,W,56,'F');doc.setFillColor('#e8a020');doc.rect(0,56,W,3,'F');
   doc.setTextColor('#ffffff');doc.setFont('helvetica','bold');doc.setFontSize(13);
   doc.text('Government of Andhra Pradesh – Directorate of Town & Country Planning',M,24);
-  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(SUO?'CLU Suo Motu – Abstract':'Change of Land Use (CLU) Applications Dashboard – Abstract',M,42);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(COMB?'CLU Applications + Suo Motu – Combined Abstract':SUO?'CLU Suo Motu – Abstract':'Change of Land Use (CLU) Applications Dashboard – Abstract',M,42);
   doc.setFontSize(9);doc.text('As on '+today,W-M,24,{align:'right'});
   // summary boxes
   const nUlb=new Set(S.ULB.map(r=>r['ULB Name'])).size,nUda=new Set(S.UDA.map(r=>r['UDA Name'])).size;
@@ -760,7 +760,7 @@ function abstractFor(ALL_DATA,SUO){
   const n=doc.getNumberOfPages();
   for(let i=1;i<=n;i++){doc.setPage(i);doc.setDrawColor('#dde3ed');doc.line(M,563,W-M,563);doc.setTextColor('#6b7a99');doc.setFont('helvetica','normal');doc.setFontSize(8);
     doc.text('CLU Pendency Dashboard · DTCP Andhra Pradesh · Generated '+new Date().toLocaleString('en-IN'),M,577);doc.text('Page '+i+' of '+n,W-M,577,{align:'right'});}
-  doc.save((SUO?'CLU_SuoMotu_Abstract_':'CLU_Abstract_')+new Date().toISOString().slice(0,10)+'.pdf');
+  doc.save((COMB?'CLU_Combined_Abstract_':SUO?'CLU_SuoMotu_Abstract_':'CLU_Abstract_')+new Date().toISOString().slice(0,10)+'.pdf');
 }
 
 function finalDate(r){
