@@ -15,7 +15,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--te
 .gov-header{background:var(--ap-blue);color:#fff}
 .gov-top{display:flex;align-items:center;gap:16px;padding:12px 28px;border-bottom:3px solid var(--ap-gold)}
 .gov-icon{width:54px;height:54px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
-.gov-title h1{font-size:16px;font-weight:700}
+.gov-title h1{font-size:16px;font-weight:700} .gov-icon img{width:100%;height:100%;object-fit:contain;border-radius:50%;padding:3px}
 .gov-title p{font-size:11px;opacity:.8;margin-top:2px}
 .gov-right{margin-left:auto;text-align:right;font-size:11px;opacity:.85}
 .gov-right strong{display:block;font-size:13px}
@@ -81,7 +81,7 @@ main{padding:20px 28px;max-width:1500px}
 .chip b{display:block;font-size:17px;color:var(--ap-blue);font-weight:800}
 .chip span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
 .cc h3{font-size:11px;font-weight:700;color:var(--ap-blue);margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em}
-.tbl-outer{background:#fff;border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden}
+.tbl-outer{scroll-margin-top:170px;background:#fff;border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden}
 .tbl-top{padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);background:#f7f9fc;flex-wrap:wrap;gap:8px}
 .tbl-top h3{font-size:13px;font-weight:700;color:var(--ap-blue)}
 #result-count{font-size:11px;color:var(--muted)}
@@ -125,11 +125,11 @@ body.suo .ltp-only,body.suo .ow{display:none!important}
 <div class="loader-overlay" id="loader">
   <div class="spinner"></div>
   <div class="loader-text">Loading CLU Pendency Dashboard…</div>
-  <div class="loader-sub" id="loader-sub">Fetching live data from Google Sheets…</div>
+  <div class="loader-sub" id="loader-sub">Loading data…</div>
 </div>
 
 <div class="gov-header"><div class="gov-top">
-  <div class="gov-icon">🏛️</div>
+  <div class="gov-icon"><img src="logo.jpg" alt="Government of Andhra Pradesh"></div>
   <div class="gov-title">
     <h1>Government of Andhra Pradesh – Directorate of Town &amp; Country Planning</h1>
     <p>Change of Land Use (CLU) – Live Pendency Monitoring Dashboard</p>
@@ -138,7 +138,6 @@ body.suo .ltp-only,body.suo .ow{display:none!important}
 </div></div>
 
 <div class="stats-bar">
-  <div class="stat-item"><div class="stat-dot" style="background:var(--ap-gold)"></div><span>Live from Google Sheets</span></div>
   <div class="stat-item"><div class="stat-dot" style="background:#3ec98e"></div><span>Refreshed: <strong id="refresh-time">—</strong></span></div>
   <div class="stat-item"><div class="stat-dot" style="background:#e05252"></div><span>Critical (&gt;180 days): <strong id="stat-crit">—</strong></span></div>
   <div class="stat-item"><div class="stat-dot" style="background:#e8943a"></div><span>Avg Pendency: <strong id="stat-avg">—</strong> days</span></div>
@@ -268,7 +267,7 @@ function setDataset(d){DATASET=d;$('seg-clu').classList.toggle('on',d==='CLU');$
 
 // ── FETCH ──
 async function fetchData(){
-  showLoader(true,'Fetching live data from Google Sheets…'); hideNotice(); setStatus('Connecting…','#e8a020');
+  showLoader(true,'Loading data…'); hideNotice(); setStatus('Connecting…','#e8a020');
   try{
     const res=await fetch(API_URL+(API_URL.includes('?')?'&':'?')+'t='+Date.now());
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -489,7 +488,7 @@ function applyFilters(){
   filtered=sortRows(ALL_DATA.filter(r=>matchRow(r,val('stage-filter'))));
   currentPage=1; renderKPIs(); renderPills(); renderTable(); updateCharts();
 }
-function setStage(v){$('stage-filter').value=v;applyFilters();}
+function setStage(v){   $('stage-filter').value=v;applyFilters();   const ev=window.event;   if(ev&&ev.target&&ev.target.closest&&ev.target.closest('.kpi'))document.querySelector('.tbl-outer').scrollIntoView({behavior:'smooth',block:'start'}); }
 function resetFilters(){
   ['stage-filter','uda-filter','ulb-filter','desig-filter','status-filter','days-filter'].forEach(id=>$(id).value='');
   $('search-input').value=''; $('sort-select').value='days-desc'; applyFilters();
