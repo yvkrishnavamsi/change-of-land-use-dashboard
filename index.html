@@ -173,7 +173,7 @@ body.suo .ltp-only,body.suo .ow{display:none!important}
       <option value="DTCP">Pending with DTCP</option><option value="GOVT">Pending with GOVT</option><option value="LTP" class="ltp-only">Pending with LTP</option>
       <option value="APPROVED">Approved</option><option value="REJECTED">Rejected</option><option value="CLOSED">Closed</option>
     </select></div>
-  <div class="fg"><label>UDA Authority</label><select id="uda-filter"><option value="">All UDAs</option></select></div>
+  <div class="fg"><label>UDA</label><select id="uda-filter"><option value="">All UDAs</option></select></div>
   <div class="fg"><label>ULB</label><select id="ulb-filter"><option value="">All ULBs</option></select></div>
   <div class="fg"><label>Designation</label><select id="desig-filter"><option value="">All Designations</option></select></div>
   <div class="fg"><label>Stage / Status</label><select id="status-filter"><option value="">All</option><option value="Initial Stage">Initial Stage</option><option value="Paper Publication / Objections Stage">Paper Publication / Objections</option><option value="Final Stage">Final Stage</option><option value="Final Payment Process">Final Payment Process</option><option value="Shortfall">Shortfall</option></select></div>
@@ -685,7 +685,7 @@ function withText(list){return roleCounts(list).map(([k,v])=>k+'-'+v).join(', ')
 const STATUS_ORDER=['Initial Stage','Paper Publication / Objections Stage','Final Stage','Final Payment Process','Shortfall','Other'];
 function statusText(list){const c={};list.forEach(r=>{const k=stageStatus(r)||'Other';c[k]=(c[k]||0)+1;});return STATUS_ORDER.filter(k=>c[k]).map(k=>k+'-'+c[k]).join(', ');}
 function groupBy(list,key){const m={};list.forEach(r=>{const k=(r[key]||'Not specified').trim();(m[k]=m[k]||[]).push(r);});return Object.entries(m).sort((a,b)=>a[0].localeCompare(b[0]));}
-function downloadAbstract(kind){const SUO=kind==='SUOMOTU';abstractFor(kind==='ALL'?ALL_DATA:ALL_DATA.filter(r=>!!r._suo===SUO),SUO,kind==='ALL');}
+function loadLogo(){return new Promise(res=>{const i=new Image();i.onload=()=>{try{const c=document.createElement('canvas');c.width=i.naturalWidth;c.height=i.naturalHeight;c.getContext('2d').drawImage(i,0,0);res(c.toDataURL('image/jpeg',0.9));}catch(e){res(null);}};i.onerror=()=>res(null);i.src='logo.jpg';});} async function downloadAbstract(kind){window.LOGO_DATA=await loadLogo();const SUO=kind==='SUOMOTU';abstractFor(kind==='ALL'?ALL_DATA:ALL_DATA.filter(r=>!!r._suo===SUO),SUO,kind==='ALL');}
 function abstractFor(ALL_DATA,SUO,COMB){
   if(!ALL_DATA.length){alert(SUO?'No Suo Motu data found.':'Data is not loaded yet.');return;}
   if(!window.jspdf){alert('PDF library failed to load. Check your internet connection.');return;}
@@ -697,7 +697,7 @@ function abstractFor(ALL_DATA,SUO,COMB){
   doc.setTextColor('#ffffff');doc.setFont('helvetica','bold');doc.setFontSize(13);
   doc.text('Government of Andhra Pradesh – Directorate of Town & Country Planning',M,24);
   doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(COMB?'CLU Applications + Suo Motu – Combined Abstract':SUO?'CLU Suo Motu – Abstract':'Change of Land Use (CLU) Applications Dashboard – Abstract',M,42);
-  doc.setFontSize(9);doc.text('As on '+today,W-M,24,{align:'right'});
+  doc.setFontSize(9);   if(window.LOGO_DATA){doc.setFillColor('#ffffff');doc.circle(W-M-24,28,25,'F');doc.addImage(window.LOGO_DATA,'JPEG',W-M-44,8,40,40);}   doc.text('As on '+today,window.LOGO_DATA?W-M-58:W-M,24,{align:'right'});
   // summary boxes
   const nUlb=new Set(S.ULB.map(r=>r['ULB Name'])).size,nUda=new Set(S.UDA.map(r=>r['UDA Name'])).size;
   const boxes=[
