@@ -99,7 +99,7 @@ td.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--muted)}
 .cb{display:inline-block;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700}
 .cb-ULB{background:#dbeafe;color:#1a5abf}.cb-UDA{background:#ede9fe;color:#6c3d9e}.cb-DTCP{background:#fef3c7;color:#d4840a}.cb-GOVT{background:#cffafe;color:#0e7490}.cb-LTP{background:#fce7f3;color:#be185d}
 .cb-APPROVED{background:#d1fae5;color:#047857}.cb-REJECTED{background:#fee2e2;color:#b91c1c}.cb-CLOSED{background:#e5e7eb;color:#374151}
-.seg{display:inline-flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden}.seg button{border:none;background:#fff;padding:8px 14px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;color:var(--muted)}.seg button.on{background:var(--ap-blue);color:#fff}
+.tp,.cmb{display:none}body.comb .tp{display:table-cell}body.comb .cmb{display:flex} .cb-SUOMOTU{background:#ccfbf1;color:#0f766e}.cb-CLU{background:#dbeafe;color:#1a5abf} .seg{display:inline-flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden}.seg button{border:none;background:#fff;padding:8px 14px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;color:var(--muted)}.seg button.on{background:var(--ap-blue);color:#fff}
 body.suo .ltp-only,body.suo .ow{display:none!important}
 .d0{color:#1a7a4a;font-weight:700}.d1{color:#d4840a;font-weight:700}.d2{color:#c45c0a;font-weight:700}.d3{color:#c0392b;font-weight:700}
 .d4{color:#7c0a0a;font-weight:700;background:#fff0f0;border-radius:4px;padding:2px 6px}
@@ -233,7 +233,7 @@ body.suo .ltp-only,body.suo .ow{display:none!important}
     <div class="tbl-scroll">
       <table id="main-tbl">
         <thead><tr>
-          <th onclick="tblSort('sno')">S.No</th><th>Application Number</th><th>Submitted Date</th><th class="ow">Owner Name</th>
+          <th onclick="tblSort('sno')">S.No</th><th>Application Number</th><th class="tp">Type</th><th>Submitted Date</th><th class="ow">Owner Name</th>
           <th>ULB</th><th>UDA</th><th class="ow">LTP Name</th><th class="hx">Assigned To</th><th class="hx">Designation &amp; Task Name</th>
           <th class="hx" onclick="tblSort('date')">Assigned Date</th>
           <th class="hx" onclick="tblSort('days')">Days Pending ↓</th>
@@ -263,7 +263,7 @@ let ALL_DATA=[], filtered=[], currentPage=1, charts={};
 const PAGE_SIZE=20;
 const $=id=>document.getElementById(id);
 let DATASET='CLU';
-function setDataset(d){DATASET=d;$('seg-clu').classList.toggle('on',d==='CLU');$('seg-suo').classList.toggle('on',d==='SUOMOTU');$('seg-all').classList.toggle('on',d==='ALL');document.body.classList.toggle('suo',d==='SUOMOTU');resetFilters();}
+function setDataset(d){DATASET=d;$('seg-clu').classList.toggle('on',d==='CLU');$('seg-suo').classList.toggle('on',d==='SUOMOTU');$('seg-all').classList.toggle('on',d==='ALL');document.body.classList.toggle('suo',d==='SUOMOTU');document.body.classList.toggle('comb',d==='ALL');resetFilters();}
 
 // ── FETCH ──
 async function fetchData(){
@@ -446,7 +446,7 @@ function tryCache(reason){
 // ── FILTERING ──
 const val=id=>$(id).value;
 function matchRow(r,stage){
-  if(DATASET!=='ALL'&&!!r._suo!==(DATASET==='SUOMOTU')) return false;
+  if(DATASET!=='ALL'&&!!r._suo!==(DATASET==='SUOMOTU')) return false;   const tf=$('type-filter').value; if(DATASET==='ALL'&&tf&&(tf==='SUO')!==!!r._suo) return false;
   const q=val('search-input').toLowerCase(), uda=val('uda-filter'), ulb=val('ulb-filter'), desig=val('desig-filter'), status=val('status-filter'), days=val('days-filter');
   if(q&&![r['Application Number'],r['Owner Name'],r['UDA Name'],r['ULB Name'],r['LTP Name'],r['Assigned To'],r['Designation & Task Name']].some(v=>v&&String(v).toLowerCase().includes(q))) return false;
   if(stage&&r._cat!==stage) return false;
@@ -491,7 +491,7 @@ function applyFilters(){
 }
 function setStage(v){   $('stage-filter').value=v;applyFilters();   const ev=window.event;   if(ev&&ev.target&&ev.target.closest&&ev.target.closest('.kpi'))document.querySelector('.tbl-outer').scrollIntoView({behavior:'smooth',block:'start'}); }
 function resetFilters(){
-  ['stage-filter','uda-filter','ulb-filter','desig-filter','status-filter','days-filter'].forEach(id=>$(id).value='');
+  ['stage-filter','uda-filter','ulb-filter','desig-filter','status-filter','days-filter','type-filter'].forEach(id=>$(id).value='');
   $('search-input').value=''; $('sort-select').value='days-desc'; applyFilters();
 }
 function tblSort(f){
@@ -499,7 +499,7 @@ function tblSort(f){
   s.value=f==='days'?(s.value==='days-desc'?'days-asc':'days-desc'):f==='date'?(s.value==='date-asc'?'date-desc':'date-asc'):'sno-asc';
   applyFilters();
 }
-['stage-filter','uda-filter','ulb-filter','desig-filter','status-filter','days-filter','sort-select'].forEach(id=>$(id).addEventListener('change',applyFilters));
+['stage-filter','uda-filter','ulb-filter','desig-filter','status-filter','days-filter','type-filter','sort-select'].forEach(id=>$(id).addEventListener('change',applyFilters));
 $('search-input').addEventListener('input',debounce(applyFilters,220));
 function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 
@@ -537,13 +537,13 @@ function renderTable(){
   $('tbl-title').textContent=(DATASET==='SUOMOTU'?'CLU Suo Motu – ':DATASET==='ALL'?'Combined (CLU + Suo Motu) – ':'')+(stage?CAT_LABELS[stage]+' – Applications':'All Applications');
   const start=(currentPage-1)*PAGE_SIZE,page=filtered.slice(start,start+PAGE_SIZE);
   $('result-count').textContent=filtered.length?`Showing ${start+1}–${Math.min(start+PAGE_SIZE,filtered.length)} of ${filtered.length} records`:'No records found';
-  const cell=(v,w,c)=>`<td${c?` class="${c}"`:''} style="font-size:11px;max-width:${w}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(v)}">${esc(v)||'—'}</td>`;
+  const cell=(v,w,c)=>`<td${c?` class="${c}"`:''} style="font-size:11px;min-width:${Math.round(w*0.75)}px;max-width:${w+40}px;white-space:normal;word-break:break-word;line-height:1.35" title="${esc(v)}">${esc(v)||'—'}</td>`;
   $('tbody').innerHTML=page.map((r,i)=>{
     const d=r._days,dc=d<=30?'d0':d<=60?'d1':d<=90?'d2':d<=180?'d3':'d4';
     const fin=FINAL.includes(r._cat),an=r['Application Number']||'—',task=r['Designation & Task Name']||'—';
     return `<tr>
       <td class="mono">${start+i+1}</td>
-      <td class="mono" title="${esc(an)}">${esc(an.length>34?an.slice(0,34)+'…':an)}</td>
+      <td class="mono" style="white-space:normal;word-break:break-all;min-width:150px;max-width:190px">${esc(an)}</td>       <td class="tp"><span class="cb cb-${r._suo?'SUOMOTU':'CLU'}">${r._suo?'Suo Motu':'CLU'}</span></td>
       <td style="white-space:nowrap;font-size:11px">${esc(r._submit)||'—'}</td>
       ${cell(r['Owner Name'],140,'ow')}${cell(r['ULB Name'],120)}${cell(abbrevUDA(r['UDA Name']),140)}${cell(r['LTP Name'],120,'ow')}${fin?'<td class="hx"></td>':cell(r['Assigned To'],130,'hx')}${fin?'<td class="hx"></td>':cell(task,160,'hx')}
       <td class="hx" style="white-space:nowrap;font-size:11px">${fin?'':(esc(r._assigned)||'—')}</td>
