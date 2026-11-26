@@ -695,9 +695,9 @@ function abstractFor(ALL_DATA,SUO,COMB){
   // header band
   doc.setFillColor('#1a3a6b');doc.rect(0,0,W,56,'F');doc.setFillColor('#e8a020');doc.rect(0,56,W,3,'F');
   doc.setTextColor('#ffffff');doc.setFont('helvetica','bold');doc.setFontSize(13);
-  doc.text('Government of Andhra Pradesh – Directorate of Town & Country Planning',M,24);
-  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(COMB?'CLU Applications + Suo Motu – Combined Abstract':SUO?'CLU Suo Motu – Abstract':'Change of Land Use (CLU) Applications Dashboard – Abstract',M,42);
-  doc.setFontSize(9);   if(window.LOGO_DATA){doc.setFillColor('#ffffff');doc.circle(W-M-24,28,25,'F');doc.addImage(window.LOGO_DATA,'JPEG',W-M-44,8,40,40);}   doc.text('As on '+today,window.LOGO_DATA?W-M-58:W-M,24,{align:'right'});
+  const TX=window.LOGO_DATA?M+58:M;   if(window.LOGO_DATA){doc.setFillColor('#ffffff');doc.roundedRect(M,4,47,48,8,8,'F');doc.addImage(window.LOGO_DATA,'JPEG',M+3.5,6,40,41.75);}   doc.text('Government of Andhra Pradesh – Directorate of Town & Country Planning',TX,24);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(COMB?'CLU Applications + Suo Motu – Combined Abstract':SUO?'CLU Suo Motu – Abstract':'Change of Land Use (CLU) Applications Dashboard – Abstract',TX,42);
+  doc.setFontSize(9);doc.text('As on '+today,W-M,24,{align:'right'});
   // summary boxes
   const nUlb=new Set(S.ULB.map(r=>r['ULB Name'])).size,nUda=new Set(S.UDA.map(r=>r['UDA Name'])).size;
   const boxes=[
