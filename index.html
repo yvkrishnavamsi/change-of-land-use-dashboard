@@ -398,6 +398,7 @@ function stageStatus(r){
 function processRows(rows){
   const now=dateOnly(new Date());
   return rows.filter(r=>r['Application Number']||r['S.no']).map(r=>{
+    Object.keys(r).forEach(k=>{if(typeof r[k]==='string')r[k]=r[k].replace(/\s+/g,' ').trim();});
     if(!r['Designation & Task Name']&&r['Task Name'])r['Designation & Task Name']=r['Task Name'];
     r._suo=r._src==='SUOMOTU'||/^CLUSUOMOTU/i.test(r['Application Number']||'');
     r._cat=stageOf((r['Designation & Task Name']||'').trim());
