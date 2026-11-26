@@ -446,7 +446,7 @@ function tryCache(reason){
 // ── FILTERING ──
 const val=id=>$(id).value;
 function matchRow(r,stage){
-  if(DATASET!=='ALL'&&!!r._suo!==(DATASET==='SUOMOTU')) return false;   const tf=$('type-filter').value; if(DATASET==='ALL'&&tf&&(tf==='SUO')!==!!r._suo) return false;
+  if(DATASET!=='ALL'&&!!r._suo!==(DATASET==='SUOMOTU')) return false;   const tf=($('type-filter')||{}).value; if(DATASET==='ALL'&&tf&&(tf==='SUO')!==!!r._suo) return false;
   const q=val('search-input').toLowerCase(), uda=val('uda-filter'), ulb=val('ulb-filter'), desig=val('desig-filter'), status=val('status-filter'), days=val('days-filter');
   if(q&&![r['Application Number'],r['Owner Name'],r['UDA Name'],r['ULB Name'],r['LTP Name'],r['Assigned To'],r['Designation & Task Name']].some(v=>v&&String(v).toLowerCase().includes(q))) return false;
   if(stage&&r._cat!==stage) return false;
@@ -491,7 +491,7 @@ function applyFilters(){
 }
 function setStage(v){   $('stage-filter').value=v;applyFilters();   const ev=window.event;   if(ev&&ev.target&&ev.target.closest&&ev.target.closest('.kpi'))document.querySelector('.tbl-outer').scrollIntoView({behavior:'smooth',block:'start'}); }
 function resetFilters(){
-  ['stage-filter','uda-filter','ulb-filter','desig-filter','status-filter','days-filter','type-filter'].forEach(id=>$(id).value='');
+  ['stage-filter','uda-filter','ulb-filter','desig-filter','status-filter','days-filter','type-filter'].forEach(id=>{const e=$(id);if(e)e.value='';});
   $('search-input').value=''; $('sort-select').value='days-desc'; applyFilters();
 }
 function tblSort(f){
@@ -499,7 +499,7 @@ function tblSort(f){
   s.value=f==='days'?(s.value==='days-desc'?'days-asc':'days-desc'):f==='date'?(s.value==='date-asc'?'date-desc':'date-asc'):'sno-asc';
   applyFilters();
 }
-['stage-filter','uda-filter','ulb-filter','desig-filter','status-filter','days-filter','type-filter','sort-select'].forEach(id=>$(id).addEventListener('change',applyFilters));
+['stage-filter','uda-filter','ulb-filter','desig-filter','status-filter','days-filter','type-filter','sort-select'].forEach(id=>{const e=$(id);if(e)e.addEventListener('change',applyFilters);});
 $('search-input').addEventListener('input',debounce(applyFilters,220));
 function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 
