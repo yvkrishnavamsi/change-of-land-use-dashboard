@@ -196,8 +196,8 @@ body.suo .ltp-only,body.suo .ow{display:none!important}
     <div class="kpi" style="--cc:#1a3a6b" onclick="setStage('')"><div class="kpi-label">Total Received / Pending</div><div class="kpi-val" id="k-total">—</div><div class="kpi-sub">All stages combined</div><div class="kpi-icon">📋</div></div>
     <div class="kpi" style="--cc:#1a5abf" onclick="setStage('ULB')"><div class="kpi-label">Pending with ULB</div><div class="kpi-val" id="k-ulb">—</div><div class="kpi-sub">Urban Local Body</div><div class="kpi-icon">🏙️</div></div>
     <div class="kpi" style="--cc:#6c3d9e" onclick="setStage('UDA')"><div class="kpi-label">Pending with UDA</div><div class="kpi-val" id="k-uda">—</div><div class="kpi-sub">UDAs incl. APCRDA</div><div class="kpi-icon">🏢</div></div>
-    <div class="kpi" style="--cc:#d4840a" onclick="setStage('DTCP')"><div class="kpi-label">Pending with DTCP</div><div class="kpi-val" id="k-dtcp">—</div><div class="kpi-sub">Town &amp; Country Planning</div><div class="kpi-icon">📐</div></div>
-    <div class="kpi" style="--cc:#0e7490" onclick="setStage('GOVT')"><div class="kpi-label">Pending with GOVT</div><div class="kpi-val" id="k-govt">—</div><div class="kpi-sub">Government</div><div class="kpi-icon">🏛️</div></div>
+    <div class="kpi" style="--cc:#d4840a" onclick="setStage('DTCP')"><div class="kpi-label">Pending with DTCP</div><div class="kpi-val" id="k-dtcp">—</div><div class="kpi-sub">DTCP Department</div><div class="kpi-icon">📐</div></div>
+    <div class="kpi" style="--cc:#0e7490" onclick="setStage('GOVT')"><div class="kpi-label">Pending with GOVT</div><div class="kpi-val" id="k-govt">—</div><div class="kpi-sub">MA &amp; UD Department</div><div class="kpi-icon">🏛️</div></div>
     <div class="kpi ltp-only" style="--cc:#be185d" onclick="setStage('LTP')"><div class="kpi-label">Pending with LTP</div><div class="kpi-val" id="k-ltp">—</div><div class="kpi-sub">Shortfall / Payment</div><div class="kpi-icon">📄</div></div>
     <div class="kpi" style="--cc:#047857" onclick="setStage('APPROVED')"><div class="kpi-label">Approved</div><div class="kpi-val" id="k-approved">—</div><div class="kpi-sub">Files approved</div><div class="kpi-icon">✅</div></div>
     <div class="kpi" style="--cc:#b91c1c" onclick="setStage('REJECTED')"><div class="kpi-label">Rejected</div><div class="kpi-val" id="k-rejected">—</div><div class="kpi-sub">Files rejected</div><div class="kpi-icon">❌</div></div>
@@ -221,7 +221,7 @@ body.suo .ltp-only,body.suo .ow{display:none!important}
 
   <div class="charts-row">
     <div class="cc cc-uda">
-      <div class="cc-head"><div><h3>Applications by UDA Authority</h3><p id="uda-sub">Pending files by Urban Development Authority</p></div></div>
+      <div class="cc-head"><div><h3>Applications by </h3><p id="uda-sub">Pending files by Urban Development Authority</p></div></div>
       <div style="height:222px"><canvas id="chartUDA"></canvas></div>
     </div>
     <div class="cc"><h3>Designation-wise Files <span id="desig-note" style="text-transform:none;font-weight:600;color:var(--muted)"></span></h3><div style="height:240px;display:flex;gap:10px;align-items:center"><div style="flex:1 1 52%;min-width:0;height:100%;position:relative"><canvas id="chartDesig"></canvas></div><div id="desig-legend" style="flex:1 1 48%;min-width:0;max-height:100%;overflow-y:auto;font-size:11px"></div></div></div>
@@ -234,7 +234,7 @@ body.suo .ltp-only,body.suo .ow{display:none!important}
       <table id="main-tbl">
         <thead><tr>
           <th onclick="tblSort('sno')">S.No</th><th>Application Number</th><th>Submitted Date</th><th class="ow">Owner Name</th>
-          <th>ULB</th><th>UDA Authority</th><th class="ow">LTP Name</th><th class="hx">Assigned To</th><th class="hx">Designation &amp; Task Name</th>
+          <th>ULB</th><th></th><th class="ow">LTP Name</th><th class="hx">Assigned To</th><th class="hx">Designation &amp; Task Name</th>
           <th class="hx" onclick="tblSort('date')">Assigned Date</th>
           <th class="hx" onclick="tblSort('days')">Days Pending ↓</th>
           <th class="fx" id="th-fdate">Final Date</th><th>Stage/Status</th>
